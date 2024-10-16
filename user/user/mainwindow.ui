@@ -1,0 +1,1420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>937</width>
+    <height>650</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>900</width>
+    <height>650</height>
+   </size>
+  </property>
+  <property name="mouseTracking">
+   <bool>false</bool>
+  </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::ContextMenuPolicy::NoContextMenu</enum>
+  </property>
+  <property name="windowTitle">
+   <string>速聊-少数人的聊天软件</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">border-radius: 10px;
+border: 0.5px solid rgb(0, 0, 0);
+</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <spacer name="verticalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Policy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>19</width>
+          <height>9</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
+       <widget class="LabelAva" name="lab_avator">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background:transparent;
+border: 2px solid black;
+border-radius: 3px;
+</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Policy::Preferred</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>18</width>
+          <height>50</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item alignment="Qt::AlignmentFlag::AlignHCenter">
+       <widget class="QPushButton" name="but_chat">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background: transparent; 
+    border: none;            
+}
+
+QPushButton:hover {
+    background: rgba(0, 0, 0, 0.2);  
+    border-radius: 10px;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::MailSend"/>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>18</width>
+          <height>18</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item alignment="Qt::AlignmentFlag::AlignHCenter">
+       <widget class="QPushButton" name="but_friends">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="mouseTracking">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background: transparent; 
+    border: none;            
+}
+
+QPushButton:hover {
+    background: rgba(0, 0, 0, 0.2);  
+    border-radius: 10px;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::CameraWeb"/>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>18</width>
+          <height>18</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>63</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignBottom">
+       <widget class="QPushButton" name="but_set">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="mouseTracking">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background: transparent; 
+    border: none;            
+}
+
+QPushButton:hover {
+    background: rgba(0, 0, 0, 0.2);  
+    border-radius: 10px;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::DocumentProperties"/>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>18</width>
+          <height>18</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Policy::Maximum</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>16</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1">
+     <widget class="QStackedWidget" name="pages">
+      <property name="styleSheet">
+       <string notr="true">border: transparent;</string>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="page_talk">
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLabel" name="lab_friendname">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="cursor">
+             <cursorShape>ArrowCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font: 520 11pt &quot;Microsoft YaHei UI&quot;;
+border: transparent;</string>
+            </property>
+            <property name="text">
+             <string>  联系人</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout">
+              <item>
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Policy::Expanding</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>500</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop">
+               <widget class="QPushButton" name="but_minwindow">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    border: none;
+    background: transparent;
+    color: rgb(78, 78, 78);
+}
+
+QPushButton:hover {
+    border: none;
+    background: transparent;
+    color: white;
+    background: grey;
+    border-radius: 3px;
+}</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset theme="QIcon::ThemeIcon::ListRemove"/>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>12</width>
+                  <height>10</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop">
+               <widget class="QPushButton" name="but_maxwindow">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    border: none;
+    background: transparent;
+    color: rgb(78, 78, 78);
+}
+
+QPushButton:hover {
+    border: none;
+    background: transparent;
+    color: white;
+    background: grey;
+    border-radius: 3px;
+}</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset theme="QIcon::ThemeIcon::MediaPlaybackStop"/>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>12</width>
+                  <height>12</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop">
+               <widget class="QPushButton" name="but_deletewindow">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    border: none;
+    background: transparent;
+    color: rgb(78, 78, 78);
+    font:  16pt 'Microsoft New Tai Lue';
+}
+
+QPushButton:hover {
+    border: none;
+    background: transparent;
+    color: white;
+    font:  16pt 'Microsoft New Tai Lue';
+    background: red;
+    border-radius: 3px;
+}</string>
+                </property>
+                <property name="text">
+                 <string>x</string>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>15</width>
+                  <height>15</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="1">
+         <widget class="TalkStacked" name="stack_talks">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>314</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QStackedWidget {
+    font: 12pt &quot;Microsoft YaHei UI&quot;;
+    border: 0.5px solid rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    background: white;
+    padding: 5px;
+}
+
+QScrollBar:vertical {
+    width: 8px;                /* 滚动条宽度 */
+    background: #f0f0f0;      /* 滚动条背景 */
+    border-radius: 8px;       /* 更明显的圆角 */
+}
+
+QScrollBar::handle:vertical {
+    background: #888;          /* 滚动条滑块颜色 */
+    min-height: 40px;          /* 滑块最小高度 */
+    border-radius: 10px;       /* 增大圆角 */
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #555;          /* 滑块悬停颜色 */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    background: none;          /* 上下箭头颜色 */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;          /* 页面的颜色 */
+}</string>
+          </property>
+          <widget class="QWidget" name="page0">
+           <layout class="QGridLayout" name="gridLayout_3"/>
+          </widget>
+          <widget class="QWidget" name="page_"/>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="EnterTextEdit" name="edit_input">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>10</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>160</height>
+           </size>
+          </property>
+          <property name="mouseTracking">
+           <bool>false</bool>
+          </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::ContextMenuPolicy::NoContextMenu</enum>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QTextEdit {
+    font: 12pt &quot;Microsoft YaHei UI&quot;;
+    border: 0.5px solid rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    background: white;
+    padding: 5px;
+}
+
+QScrollBar:vertical {
+    width: 7px;                /* 滚动条宽度 */
+    background: #f0f0f0;      /* 滚动条背景 */
+    border-radius: 8px;       /* 更明显的圆角 */
+}
+
+QScrollBar::handle:vertical {
+    background: #888;          /* 滚动条滑块颜色 */
+    min-height: 40px;          /* 滑块最小高度 */
+    border-radius: 10px;       /* 增大圆角 */
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #555;          /* 滑块悬停颜色 */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    background: none;          /* 上下箭头颜色 */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;          /* 页面的颜色 */
+}</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="sizeConstraint">
+           <enum>QLayout::SizeConstraint::SetFixedSize</enum>
+          </property>
+          <item alignment="Qt::AlignmentFlag::AlignVCenter">
+           <widget class="QPushButton" name="but_tool1">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: transparent;
+    border: none;
+    color: black;
+}
+QPushButton:hover {
+    background-color: rgba(0, 0, 0, 0.1); 
+}
+QPushButton:pressed {
+    background-color: rgba(0, 0, 0, 0.2); 
+}</string>
+            </property>
+            <property name="text">
+             <string>发送图片</string>
+            </property>
+            <property name="icon">
+             <iconset theme="QIcon::ThemeIcon::ZoomFitBest"/>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignmentFlag::AlignVCenter">
+           <widget class="QPushButton" name="but_tool2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: transparent;
+    border: none;
+    color: black;
+}
+QPushButton:hover {
+    background-color: rgba(0, 0, 0, 0.1); 
+}
+QPushButton:pressed {
+    background-color: rgba(0, 0, 0, 0.2); 
+}</string>
+            </property>
+            <property name="text">
+             <string>发送文件</string>
+            </property>
+            <property name="icon">
+             <iconset theme="QIcon::ThemeIcon::DocumentOpen"/>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignmentFlag::AlignVCenter">
+           <widget class="QPushButton" name="but_tool3">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: transparent;
+    border: none;
+    color: black;
+}
+QPushButton:hover {
+    background-color: rgba(0, 0, 0, 0.1); 
+}
+QPushButton:pressed {
+    background-color: rgba(0, 0, 0, 0.2); 
+}</string>
+            </property>
+            <property name="text">
+             <string>语音聊天</string>
+            </property>
+            <property name="icon">
+             <iconset theme="QIcon::ThemeIcon::CallStart"/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_17">
+          <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter">
+           <widget class="QPushButton" name="but_fangdajing">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background:transparent;
+ border: none;
+</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset theme="QIcon::ThemeIcon::EditFind"/>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignmentFlag::AlignLeft">
+           <widget class="LineSerach" name="line_serach">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>140</width>
+              <height>26</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>140</width>
+              <height>26</height>
+             </size>
+            </property>
+            <property name="mouseTracking">
+             <bool>false</bool>
+            </property>
+            <property name="contextMenuPolicy">
+             <enum>Qt::ContextMenuPolicy::NoContextMenu</enum>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;Microsoft YaHei UI&quot;;
+border-radius: 3px;
+background:rgb(245, 245, 245);
+color:grey;
+padding: 5px;
+</string>
+            </property>
+            <property name="text">
+             <string>搜索</string>
+            </property>
+            <property name="maxLength">
+             <number>20</number>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter">
+           <widget class="QPushButton" name="but_add0">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background:transparent;
+ border: none;
+</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset theme="QIcon::ThemeIcon::ContactNew"/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0" rowspan="3">
+         <widget class="TalkList" name="list_talks">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+            <horstretch>185</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>185</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>185</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="mouseTracking">
+           <bool>true</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QListView {
+font: 450 11pt &quot;Microsoft YaHei UI Light&quot;;
+border: 0.5px solid rgba(0, 0, 0, 0.3);
+border-radius: 10px;
+background: rgb(255, 248, 253);
+padding: 5px;
+}
+
+QScrollBar:vertical {
+width: 7px; /* 滚动条宽度 */
+background: #f0f0f0; /* 滚动条背景 */
+border-radius: 8px; /* 更明显的圆角 */
+}
+
+QScrollBar::handle:vertical {
+background: #888; /* 滚动条滑块颜色 */
+min-height: 40px; /* 滑块最小高度 */
+border-radius: 10px; /* 增大圆角 */
+}
+
+QScrollBar::handle:vertical:hover {
+background: #555; /* 滑块悬停颜色 */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+background: none; /* 上下箭头颜色 */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+background: none; /* 页面的颜色 */
+}</string>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+       <widget class="QPushButton" name="but_send">
+        <property name="geometry">
+         <rect>
+          <x>740</x>
+          <y>462</y>
+          <width>70</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="cursor">
+         <cursorShape>ArrowCursor</cursorShape>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    font: 11pt &quot;Microsoft YaHei UI&quot;;
+    background-color: rgb(167, 214, 255); 
+    color: white;; 
+   border-radius: 5px;
+}
+</string>
+        </property>
+        <property name="text">
+         <string>发送</string>
+        </property>
+       </widget>
+       <zorder>edit_input</zorder>
+       <zorder>list_talks</zorder>
+       <zorder>but_send</zorder>
+       <zorder>stack_talks</zorder>
+      </widget>
+      <widget class="QWidget" name="page_friends">
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="1" column="1">
+         <widget class="CustomTextEdit" name="edit_show2">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="mouseTracking">
+           <bool>false</bool>
+          </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::ContextMenuPolicy::ActionsContextMenu</enum>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QTextEdit {
+    font: 12pt &quot;Microsoft YaHei UI&quot;;
+    border: 0.5px solid rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    background: white;
+    padding: 5px;
+}
+
+QScrollBar:vertical {
+    width: 7px;                /* 滚动条宽度 */
+    background: #f0f0f0;      /* 滚动条背景 */
+    border-radius: 8px;       /* 更明显的圆角 */
+}
+
+QScrollBar::handle:vertical {
+    background: #888;          /* 滚动条滑块颜色 */
+    min-height: 40px;          /* 滑块最小高度 */
+    border-radius: 10px;       /* 增大圆角 */
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #555;          /* 滑块悬停颜色 */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    background: none;          /* 上下箭头颜色 */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;          /* 页面的颜色 */
+}</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter">
+           <widget class="QPushButton" name="but_fangdajing2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background:transparent;
+ border: none;
+</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset theme="QIcon::ThemeIcon::EditFind"/>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignmentFlag::AlignLeft">
+           <widget class="LineSerach" name="line_serach2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>140</width>
+              <height>26</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>140</width>
+              <height>26</height>
+             </size>
+            </property>
+            <property name="mouseTracking">
+             <bool>false</bool>
+            </property>
+            <property name="contextMenuPolicy">
+             <enum>Qt::ContextMenuPolicy::NoContextMenu</enum>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;Microsoft YaHei UI&quot;;
+border-radius: 3px;
+background:rgb(245, 245, 245);
+color:grey;
+padding: 5px;
+</string>
+            </property>
+            <property name="text">
+             <string>搜索</string>
+            </property>
+            <property name="maxLength">
+             <number>20</number>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter">
+           <widget class="QPushButton" name="but_addfriends">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background:transparent;
+ border: none;
+</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset theme="QIcon::ThemeIcon::ContactNew"/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Policy::Expanding</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>600</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop">
+               <widget class="QPushButton" name="but_minwindow2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>15</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    border: none;
+    background: transparent;
+    color: rgb(78, 78, 78);
+}
+
+QPushButton:hover {
+    border: none;
+    background: transparent;
+    color: white;
+    background: grey;
+    border-radius: 3px;
+}</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset theme="QIcon::ThemeIcon::ListRemove"/>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>12</width>
+                  <height>10</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop">
+               <widget class="QPushButton" name="but_maxwindow2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>15</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    border: none;
+    background: transparent;
+    color: rgb(78, 78, 78);
+}
+
+QPushButton:hover {
+    border: none;
+    background: transparent;
+    color: white;
+    background: grey;
+    border-radius: 3px;
+}</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset theme="QIcon::ThemeIcon::MediaPlaybackStop"/>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>12</width>
+                  <height>12</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop">
+               <widget class="QPushButton" name="but_deletewindow2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>15</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    border: none;
+    background: transparent;
+    color: rgb(78, 78, 78);
+    font:  16pt 'Microsoft New Tai Lue';
+}
+
+QPushButton:hover {
+    border: none;
+    background: transparent;
+    color: white;
+    font:  16pt 'Microsoft New Tai Lue';
+    background: red;
+    border-radius: 3px;
+}</string>
+                </property>
+                <property name="text">
+                 <string>x</string>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>15</width>
+                  <height>15</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
+         <widget class="FriendList" name="list_friends">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+            <horstretch>185</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>185</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>150</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>ArrowCursor</cursorShape>
+          </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::ContextMenuPolicy::NoContextMenu</enum>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QListView {
+font: 420 11pt &quot;Microsoft YaHei UI Light&quot;;
+border: 0.5px solid rgba(0, 0, 0, 0.3);
+border-radius: 10px;
+background: rgb(255, 248, 253);
+padding: 5px;
+}
+
+QScrollBar:vertical {
+width: 7px; /* 滚动条宽度 */
+background: #f0f0f0; /* 滚动条背景 */
+border-radius: 8px; /* 更明显的圆角 */
+}
+
+QScrollBar::handle:vertical {
+background: #888; /* 滚动条滑块颜色 */
+min-height: 40px; /* 滑块最小高度 */
+border-radius: 10px; /* 增大圆角 */
+}
+
+QScrollBar::handle:vertical:hover {
+background: #555; /* 滑块悬停颜色 */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+background: none; /* 上下箭头颜色 */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+background: none; /* 页面的颜色 */
+}</string>
+          </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustIgnored</enum>
+          </property>
+          <property name="dragEnabled">
+           <bool>false</bool>
+          </property>
+          <property name="dragDropMode">
+           <enum>QAbstractItemView::DragDropMode::DropOnly</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>100</width>
+            <height>100</height>
+           </size>
+          </property>
+          <property name="horizontalScrollMode">
+           <enum>QAbstractItemView::ScrollMode::ScrollPerItem</enum>
+          </property>
+          <property name="movement">
+           <enum>QListView::Movement::Static</enum>
+          </property>
+          <property name="resizeMode">
+           <enum>QListView::ResizeMode::Adjust</enum>
+          </property>
+          <property name="viewMode">
+           <enum>QListView::ViewMode::ListMode</enum>
+          </property>
+          <property name="uniformItemSizes">
+           <bool>false</bool>
+          </property>
+          <property name="batchSize">
+           <number>1</number>
+          </property>
+          <property name="selectionRectVisible">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineSerach</class>
+   <extends>QLineEdit</extends>
+   <header location="global">mainwindow-else.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CustomTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header location="global">mainwindow-else.h</header>
+  </customwidget>
+  <customwidget>
+   <class>LabelAva</class>
+   <extends>QLabel</extends>
+   <header location="global">mainwindow-else.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TalkList</class>
+   <extends>QListView</extends>
+   <header location="global">mainwindow-else.h</header>
+  </customwidget>
+  <customwidget>
+   <class>FriendList</class>
+   <extends>QListView</extends>
+   <header location="global">mainwindow-else.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TalkStacked</class>
+   <extends>QStackedWidget</extends>
+   <header location="global">mainwindow-else.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>EnterTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header location="global">mainwindow-else.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

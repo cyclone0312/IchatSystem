@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/pictures">
+        <file>suliao.png</file>
+        <file>suliao_avator.png</file>
+        <file>suliao_avator_normal.jpg</file>
+        <file>008 Rainy Ashville.png</file>
+        <file>051 February Ink.png</file>
+        <file>050 Snow Again.png</file>
+        <file>094 Cloudy Apple.png</file>
+        <file>addfriends.jpg</file>
+        <file>andan.jpg</file>
+        <file>andan_touming.jpg</file>
+        <file>094 Cloudy Apple - trans.png</file>
+        <file>back.png</file>
+    </qresource>
+</RCC>
