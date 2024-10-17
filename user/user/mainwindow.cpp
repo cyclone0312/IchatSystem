@@ -1766,6 +1766,7 @@ void MainWindow::listtalkChoice(const QJsonObject& json)//聊天列表的菜单�
             QWidget* page = ui->stack_talks->findChild<QWidget *>(ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString());
             QListWidget *list = page->findChild<QListWidget *>();
             list->clear();
+            list->setObjectName("notime");//10.18修改
             Dialog dialog(this);
             dialog.transText("清空聊天记录成功!");
             dialog.exec();
