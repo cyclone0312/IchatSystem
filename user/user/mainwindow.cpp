@@ -42,6 +42,12 @@ MainWindow::MainWindow(const QString accountNumber0, QWidget *parent)
         if(ui->but_send->isEnabled() && !ui->edit_input->toPlainText().isEmpty()){
             ui->but_send->click();}
     });
+    //连接保存文件完成后弹窗
+    connect(this, &MainWindow::saveDone, [this] (const QString &status){
+        Dialog dialog(this);
+        dialog.transText(status);
+        dialog.exec();
+    });
     //创建右边用户信息主布局
     newLayout = new QVBoxLayout(ui->edit_show2);
     newLayout->setAlignment(Qt::AlignCenter); // 主布局居中
@@ -2690,23 +2696,35 @@ void MainWindow::dealMessages(const QJsonObject& json)//处理接收到的聊天
 void MainWindow::dealDocument(const QJsonObject& json)//处理接收到的文件
 {
     QString filename = json["filename"].toString();
-    QString fileDataBase64 = json["data"].toString();
     //选择保存路径
     QString savePath = QFileDialog::getSaveFileName(this, tr("Save File"), filename);
     if (savePath.isEmpty()) {
         qDebug() << "保存文件被取消";
         return;
     }
+    Dialog dialog(this);
+    dialog.transText("正在下载文件，请勿关闭窗口!");
+    dialog.exec();
     //开启一个新线程处理文件保存
     QtConcurrent::run([=]() {
-        QByteArray fileData = QByteArray::fromBase64(fileDataBase64.toUtf8());
+        QByteArray fileData = QByteArray::fromBase64(json["data"].toString().toUtf8());
         QFile file(savePath);
         if (file.open(QIODevice::WriteOnly)) {
             file.write(fileData);
             file.close();
             qDebug() << "文件保存成功:" << savePath;
+            //在主线程中发送信号
+            QMetaObject::invokeMethod(this, "handleSaveDone", Qt::QueuedConnection, Q_ARG(QString, "保存成功"));
         } else {
             qDebug() << "文件保存失败:" << file.errorString();
+            //在主线程中发送信号
+            QMetaObject::invokeMethod(this, "handleSaveDone", Qt::QueuedConnection, Q_ARG(QString, "保存失败"));
         }
     });
+}
+
+
+void MainWindow::handleSaveDone(const QString &status)//发送文件保存完毕的信号
+{
+    emit saveDone(status);
 }
