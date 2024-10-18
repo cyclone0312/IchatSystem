@@ -140,6 +140,7 @@ private slots:
     void on_but_tool1_clicked();//发送图片
     void on_but_tool2_clicked();//发送文件
     void sendDoc(const QByteArray &jsonData, const QString &filename, const QString &timestamp, const QString &receiver);//发送文件
+    void handleSaveDone(const QString &status);//发送文件保存完毕的信号
     void onTalkItemCurrentChanged();//聊天页面项切换项更新消息框视图
     void onFriendItemCurrentChanged();//好友列表页面项切换项更新右边视图
     void mousePressEvent(QMouseEvent *event);//鼠标点击事件
@@ -176,6 +177,7 @@ signals:
     void changePasswordAnswer1(const QJsonObject& json);//修改账号密码第一个申请的结果
     void changePasswordAnswer2(const QJsonObject& json);//修改账号密码第一个申请的结果
     void logoutAnswer(const QJsonObject& json);//注销的结果
+    void saveDone(QString status);//文件保存完成 发出信号弹窗
 
 private:
     Ui::MainWindow *ui;
