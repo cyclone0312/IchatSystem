@@ -79,6 +79,7 @@ signals:
 private:
     QMutex dbMutex;
     QReadWriteLock lock;//读写锁
+    QMutex mutex;
     ConnectionPool& pool;
     QSqlDatabase db;
     QTcpSocket *socket;
