@@ -86,6 +86,8 @@ ConnectionPool::ConnectionPool() : maxConnections(301)//私有构造函数  默�
                    "sender_id VARCHAR(20) NOT NULL, "
                    "receiver_id VARCHAR(20) NOT NULL, "
                    "content LONGTEXT, "
+                   "filename VARCHAT(20),"
+                   "status VARCHAT(20),"
                    "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
                    "message_type VARCHAR(20) NOT NULL, "
                    "FOREIGN KEY (sender_id) REFERENCES Users(qq_number) ON DELETE CASCADE);");
