@@ -1073,6 +1073,7 @@ void ClientHandler::dealAddNewFriends(const QJsonObject &json)//处理用户回�
 void ClientHandler::dealMessages(const QJsonObject json)//处理用户发送的消息
 {
     if(json["messagetype"] == "document"){
+        QMutexLocker locker(&mutex);
         //将消息加入队列
         messageQueue.enqueue(json);
         if (!isSending) {
