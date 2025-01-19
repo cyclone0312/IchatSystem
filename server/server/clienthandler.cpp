@@ -286,7 +286,7 @@ void ClientHandler::dealRegister(const QJsonObject &json)//处理注册请求
             //准备 SQL 插入语句
             qry.prepare("INSERT INTO Users (qq_number, nickname, signature, gender, password, question,answer) "
                         "VALUES (:qq_number, :nickname, :signature, :gender, :password, :question,:answer)");
-
+            
             //绑定参数
             qry.bindValue(":qq_number", randomNumber);
             qry.bindValue(":nickname", nickname);
@@ -770,14 +770,14 @@ void ClientHandler::dealChangeInformation(const QJsonObject &json)//处理用户
 }
 
 
-void ClientHandler::dealChangePassword(const QJs于Object &js于)//处理用户更新密码的功能
+void ClientHandler::dealChangePassword(const QJsonObject &json)//处理用户更新密码的功能
 {
     QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
     QSqlQuery qry(db);
-    QJs于Object qjsonObj;
+    QJsonObject qjsonObj;
     qry.prepare("SELECT * FROM Users WHERE qq_number = :account AND password = :password");
-    qry.bindValue(":account"， js于["account"].toString());
-    qry.bindValue(":password"， js于["password"].toString());
+    qry.bindValue(":account", json["account"].toString());
+    qry.bindValue(":password", json["password"].toString());
     // 执行查询并检查结果
     if (!qry.exec()) {
         qDebug() << "查找失败" << qry.lastError().text();
@@ -801,19 +801,19 @@ void ClientHandler::dealChangePassword(const QJs于Object &js于)//处理用户�
 }
 
 
-void ClientHandler::dealChangePassword2(const QJs于Object &json)//处理用户更新密码的功能
+void ClientHandler::dealChangePassword2(const QJsonObject &json)//处理用户更新密码的功能
 {
     QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
     QSqlQuery qry(db);
-    QJs于Object qjsonObj;
+    QJsonObject qjsonObj;
     //开始事务
     if (!db.transaction()) {
         qDebug() << "开始事务失败:" << db.lastError().text();
         return;
     }
     qry.prepare("UPDATE Users SET password = :password WHERE qq_number = :account");
-    qry.bindValue(":account"， js于["account"].toString());
-    qry.bindValue(":password"， js于["password"].toString());
+    qry.bindValue(":account", json["account"].toString());
+    qry.bindValue(":password", json["password"].toString());
     // 执行查询并检查结果
     if (!qry.exec()) {
         qDebug() << "修改失败" << qry.lastError().text();
@@ -832,11 +832,11 @@ void ClientHandler::dealChangePassword2(const QJs于Object &json)//处理用户�
 }
 
 
-void ClientHandler::dealLogout(const QJs于Object &json)//处理用户注销的功能
+void ClientHandler::dealLogout(const QJsonObject &json)//处理用户注销的功能
 {
     QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
     QSqlQuery qry(db);
-    QJs于Object qjsonObj;
+    QJsonObject qjsonObj;
     //开始事务
     if (!db.transaction()) {
         qDebug() << "开始事务失败:" << db.lastError().text();
@@ -853,8 +853,8 @@ void ClientHandler::dealLogout(const QJs于Object &json)//处理用户注销的�
         return;
     }
     qry.prepare("SELECT * FROM Users WHERE qq_number = :account AND password = :password");
-    qry.bindValue(":account"， js于["account"].toString());
-    qry.bindValue(":password"， js于["password"].toString());
+    qry.bindValue(":account", json["account"].toString());
+    qry.bindValue(":password", json["password"].toString());
     // 执行查询并检查结果
     if (!qry.exec()) {
         qDebug() << "查找失败" << qry.lastError().text();
@@ -1192,6 +1192,7 @@ void ClientHandler::dealAskDocument(const QJsonObject &json)//处理用户要下
         });
         worker.process();//开始处理
     });
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater); 
     thread->start(); //启动线程
 }
 
