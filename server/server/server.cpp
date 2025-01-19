@@ -15,6 +15,8 @@ Server::Server(QWidget *parent)
     //显示表格
     showTable("Users");
     ui->table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //初始化tcp对象
+    TCP = new QTcpServer(this);
 }
 
 
@@ -64,7 +66,6 @@ void Server::showTable(const QString &tablename)//显示表格
 
 bool Server::tcpListen()//建立连接，监听对象
 {
-    TCP = new QTcpServer(this);
     connect(TCP, &QTcpServer::newConnection, this, &Server::onNewConnection);
     if (!TCP->listen(QHostAddress::Any, 1999)) {
         qDebug() << "监听失败:" << TCP->errorString();
@@ -103,12 +104,11 @@ void Server::onNewConnection()//有新连接到来新建clienthandler
 {
     QTcpSocket *socket = TCP->nextPendingConnection();
     ConnectionPool& pool = ConnectionPool::getInstance();//获取连接池实例
-    auto handler = std::make_shared<ClientHandler>(socket, pool, this);//使用 shared_ptr 管理 handler
+    ClientHandler* handler = new ClientHandler(socket, pool, this);
     QThreadPool::globalInstance()->start([handler, socket]() {
-        connect(socket, &QTcpSocket::readyRead, handler.get(), &ClientHandler::onReadyRead);
-        connect(socket, &QTcpSocket::disconnected, handler.get(), &ClientHandler::onDisconnected);
-        //当 socket 断开连接时，handler 会自动释放
-        connect(socket, &QTcpSocket::disconnected, [handler, socket]() {
+        connect(socket, &QTcpSocket::readyRead, handler, &ClientHandler::onReadyRead);
+        connect(socket, &QTcpSocket::disconnected, handler, &ClientHandler::onDisconnected);//这个槽会析构handler
+        connect(socket, &QTcpSocket::disconnected, [socket]() {
             socket->deleteLater();
         });
     });
