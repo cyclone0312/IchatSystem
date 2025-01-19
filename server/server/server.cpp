@@ -21,6 +21,7 @@ Server::Server(QWidget *parent)
 
 
 Server::~Server(){
+    delete TCP;
     delete ui;
 }
 
@@ -107,9 +108,12 @@ void Server::onNewConnection()//有新连接到来新建clienthandler
     ClientHandler* handler = new ClientHandler(socket, pool, this);
     QThreadPool::globalInstance()->start([handler, socket]() {
         connect(socket, &QTcpSocket::readyRead, handler, &ClientHandler::onReadyRead);
-        connect(socket, &QTcpSocket::disconnected, handler, &ClientHandler::onDisconnected);//这个槽会析构handler
+        connect(socket, &QTcpSocket::disconnected, handler, &ClientHandler::onDisconnected);
         connect(socket, &QTcpSocket::disconnected, [socket]() {
             socket->deleteLater();
+        });
+        connect(socket, &QTcpSocket::disconnected, [handler]() {
+            handler->deleteLater();
         });
     });
 }
