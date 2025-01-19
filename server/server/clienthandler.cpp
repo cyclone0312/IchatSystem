@@ -152,7 +152,6 @@ void ClientHandler::onDisconnected()//有用户断联了
     if(account != "0"){
         removeClient(account);
     }
-    this->~ClientHandler();
 }
 
 
@@ -286,7 +285,7 @@ void ClientHandler::dealRegister(const QJsonObject &json)//处理注册请求
             //准备 SQL 插入语句
             qry.prepare("INSERT INTO Users (qq_number, nickname, signature, gender, password, question,answer) "
                         "VALUES (:qq_number, :nickname, :signature, :gender, :password, :question,:answer)");
-            
+
             //绑定参数
             qry.bindValue(":qq_number", randomNumber);
             qry.bindValue(":nickname", nickname);
@@ -1192,7 +1191,7 @@ void ClientHandler::dealAskDocument(const QJsonObject &json)//处理用户要下
         });
         worker.process();//开始处理
     });
-    connect(thread, &QThread::finished, thread, &QObject::deleteLater); 
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
     thread->start(); //启动线程
 }
 
