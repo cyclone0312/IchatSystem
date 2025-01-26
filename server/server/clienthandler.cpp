@@ -1,7 +1,7 @@
 #include "clienthandler.h"
 
 ClientHandler::ClientHandler(QTcpSocket *socket, ConnectionPool& pool, Server *srv)
-    : pool(pool) , socket(socket) , srv(srv)
+    : pool(pool) ， socket(socket) ， srv(srv)
 {
     //连接数据库
     databasesConnect();
@@ -1177,21 +1177,21 @@ void ClientHandler::sendNextMessage()//从队列发送下一条消息(处理文�
 }
 
 
-void ClientHandler::dealAskDocument(const QJsonObject &json)//处理用户要下载文件的要求
+void ClientHandler::dealAskDocument(const QJsonObject &json)//处理用户要下载文件的要求（连续多次下载会崩溃 可自行创建数据结构管理下载请求或对客户端下载请求进行管理）
 {
     qDebug()<<"有人想要文件";
     QString filename = json["filename"].toString();
     QString timestamp = json["timestamp"].toString();
+    DocumentWorker* worker = new DocumentWorker(filename, timestamp, db);
     QThread *thread = QThread::create([=]() {
-        DocumentWorker worker(filename, timestamp, db);
-        connect(&worker, &DocumentWorker::resultReady, this, [this](const QJsonObject &result) {
+        connect(worker, &DocumentWorker::resultReady, this, [this, &worker](const QJsonObject &result) {
             QByteArray messageWithSeparator = QJsonDocument(result).toJson() + "END";
             socket->write(messageWithSeparator);
             socket->flush();
+            worker->deleteLater();
         });
-        worker.process();//开始处理
+        worker->process();//开始处理
     });
-    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
     thread->start(); //启动线程
 }
 
