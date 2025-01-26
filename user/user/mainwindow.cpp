@@ -30,20 +30,20 @@ MainWindow::MainWindow(const QString accountNumber0, QWidget *parent)
     //连接到服务器
     tcpConnect();
     //连接 socket的信号槽
-    connect(socket, &QTcpSocket::readyRead, this, &MainWindow::onReadyRead);
+    connect(socket, &QTcpSocket::readyRead, this， &MainWindow::onReadyRead);
     //连接聊天列表右键菜单和窗体的信号槽
-    connect(ui->list_talks, &TalkList::choiceDone, this, &MainWindow::listtalkChoice);
+    connect(ui->list_talks， &TalkList::choiceDone, this， &MainWindow::listtalkChoice);
     //设置聊天页面先不显示好友名字
     ui->lab_friendname->setText("");
     //设置聊天页面先不可输入
     ui->edit_input->setEnabled(false);
     //连接聊天输入框的回车和提交
-    connect(ui->edit_input, &EnterTextEdit::enterKey, [this] (){
+    connect(ui->edit_input， &EnterTextEdit::enterKey, [this] (){
         if(ui->but_send->isEnabled() && !ui->edit_input->toPlainText().isEmpty()){
             ui->but_send->click();}
     });
     //连接保存文件完成后弹窗
-    connect(this, &MainWindow::saveDone, [this] (const QString &status){
+    connect(this， &MainWindow::saveDone, [this] (const QString &status){
         Dialog dialog(this);
         dialog.transText(status);
         dialog.exec();
@@ -55,9 +55,9 @@ MainWindow::MainWindow(const QString accountNumber0, QWidget *parent)
     ui->list_talks->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->list_friends->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     //连接左上角头像和弹出修改信息窗口的信号槽
-    connect(ui->lab_avator, &LabelAva::changeInfo, this, &MainWindow::changeInfo);
+    connect(ui->lab_avator， &LabelAva::changeInfo, this， &MainWindow::changeInfo);
     //通过定时器延迟
-    QTimer::singleShot(150, this, [this, accountNumber = this->accountNumber]() {
+    QTimer::singleShot(150， this， [this， accountNumber = this->accountNumber]() {
         //发送已经登录的信号
         havelogin(accountNumber);//收到回复后依次调用加载消息列表 加载聊天记录
         //设置按钮位置
@@ -656,7 +656,6 @@ void MainWindow::addMessageTo(const QWidget *page, const QString &sender, const 
     QString time;
     //处理时间戳
     if (printTimeOrNot(timestamp, list->objectName(), time)) {
-        list->setObjectName(timestamp);
         //创建新的QListWidgetItem
         QListWidgetItem *item = new QListWidgetItem();
         //创建一个QWidget 来显示时间戳
@@ -672,6 +671,7 @@ void MainWindow::addMessageTo(const QWidget *page, const QString &sender, const 
         list->addItem(item);
         list->setItemWidget(item, itemWidget);
     }
+            list->setObjectName(timestamp);
     //创建发送者头像
     LabelFriendAvaInMessage *senderAva = new LabelFriendAvaInMessage;
     senderAva->setScaledContents(true);
