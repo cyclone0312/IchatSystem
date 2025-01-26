@@ -1,6 +1,5 @@
 #include "connectionpool.h"
 
-
 ConnectionPool& ConnectionPool::getInstance()//获取单例实例
 {
     static ConnectionPool instance;//确保是同一个实例
@@ -88,7 +87,7 @@ ConnectionPool::ConnectionPool() : maxConnections(301)//私有构造函数  默�
                    "content LONGTEXT, "
                    "filename VARCHAT(20),"
                    "status VARCHAT(20),"
-                   "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                   "timestamp TIMESTAMP, "
                    "message_type VARCHAR(20) NOT NULL, "
                    "FOREIGN KEY (sender_id) REFERENCES Users(qq_number) ON DELETE CASCADE);");
         if (query.lastError().isValid()) {
