@@ -7,26 +7,33 @@ ConnectionPool& ConnectionPool::getInstance()//获取单例实例
 }
 
 
-QSqlDatabase ConnectionPool::getConnection()//获取数据库连接
+QSqlDatabase ConnectionPool::getConnection() // 获取数据库连接
 {
-    //创建一个数据库
     QMutexLocker locker(&mutex);
+    if (!pool.isEmpty()) {
+        QSqlDatabase db = pool.dequeue();
+        if (db.isOpen()) {
+            qDebug() << "有现成的连接";
+            return db;
+        } else {
+            db.close();
+            qDebug() << "连接已关闭，丢弃该连接，尝试创建新连接...";
+            return getConnection();
+        }
+    }
+    //如果没有可用的连接且池未满，则新建连接
     if (pool.size() < maxConnections) {
-        //生成一个唯一的连接名称
         QString connectionName = QString("Connection_%1").arg(connectionCounter++);
         QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
         db.setDatabaseName(dbName);
         if (!db.open()) {
             qDebug() << "数据库打开失败:" << db.lastError().text();
-            return QSqlDatabase();//返回无效连接
+            return QSqlDatabase();
         }
-        return db;//返回新连接
-    } else if (!pool.isEmpty()) {
-        QSqlDatabase db = pool.dequeue();
-        return db;//返回已有连接
+        return db; // 返回新连接
     } else {
         qDebug() << "数据库最大连接数已达到!";
-        return QSqlDatabase();//返回无效连接
+        return QSqlDatabase();
     }
 }
 
