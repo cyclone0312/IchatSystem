@@ -213,57 +213,64 @@ QPixmap ClientHandler::base64ToPixmap(const QString &base64Str)//将base64转换
 
 void ClientHandler::dealLogin(const QJsonObject &json)//处理登录请求
 {
-    QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
-    QSqlQuery qry(db);
-    qry.prepare("SELECT COUNT(*) FROM Users WHERE qq_number = :qq_number AND password = :password");
-    qry.bindValue(":qq_number", json["qq_number"].toString());
-    qry.bindValue(":password", json["password"].toString());
-    QJsonObject qjsonObj;
-    if(qry.exec()){
-        qry.next();
-        int count = qry.value(0).toInt();
-        if(count==1){//登录成功
-            auto it = getClient(json["qq_number"].toString());
-            if(it){//不是空指针 说明有人已经登录这个账号了 给那个客户端发送被挤下去的通知
-                qDebug()<<json["qq_number"]<<"已经在登录啦";
-                QJsonObject qjson;
-                qjson["tag"] = "kickedoffline";
-                connect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
-                emit sendMessage(qjson);
-                QTimer::singleShot(0, this, [this, it]() {
-                    disconnect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
-                });
+    bool flag = false;
+    ClientHandler *it = nullptr;
+    {
+        QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
+        QSqlQuery qry(db);
+        qry.prepare("SELECT COUNT(*) FROM Users WHERE qq_number = :qq_number AND password = :password");
+        qry.bindValue(":qq_number", json["qq_number"].toString());
+        qry.bindValue(":password", json["password"].toString());
+        QJsonObject qjsonObj;
+        if(qry.exec()){
+            qry.next();
+            int count = qry.value(0).toInt();
+            if(count==1){//登录成功
+                it = getClient(json["qq_number"].toString());
+                if(it){//不是空指针 说明有人已经登录这个账号了 给那个客户端发送被挤下去的通知
+                    qDebug()<<json["qq_number"]<<"已经在登录啦";
+                    flag = true;
+                }
+                //是空指针则不用管 正常登录
+                qjsonObj["tag"] = "login";
+                qjsonObj["answer"] = "dengluchenggong";
+                jsonDoc=QJsonDocument(qjsonObj);
+                jsonData = jsonDoc.toJson();
+                //发送消息
+                jsonDoc = QJsonDocument(qjsonObj);
+                jsonData = jsonDoc.toJson();
+                //添加标识符
+                QByteArray messageWithSeparator = jsonData + "END";
+                //发送JSON 数据
+                socket->write(messageWithSeparator);
+                socket->flush();
+                jsonData.clear();
             }
-            //是空指针则不用管 正常登录
-            qjsonObj["tag"] = "login";
-            qjsonObj["answer"] = "dengluchenggong";
-            jsonDoc=QJsonDocument(qjsonObj);
-            jsonData = jsonDoc.toJson();
-            //发送消息
-            jsonDoc = QJsonDocument(qjsonObj);
-            jsonData = jsonDoc.toJson();
-            //添加标识符
-            QByteArray messageWithSeparator = jsonData + "END";
-            //发送JSON 数据
-            socket->write(messageWithSeparator);
-            socket->flush();
-            jsonData.clear();
+            else{//登录失败
+                qjsonObj["tag"] = "login";
+                qjsonObj["answer"] = "denglushibai";
+                jsonDoc = QJsonDocument(qjsonObj);
+                jsonData = jsonDoc.toJson();
+                //发送消息
+                jsonDoc = QJsonDocument(qjsonObj);
+                jsonData = jsonDoc.toJson();
+                //添加标识符
+                QByteArray messageWithSeparator = jsonData + "END";
+                //发送JSON 数据
+                socket->write(messageWithSeparator);
+                socket->flush();
+                jsonData.clear();
+            }
         }
-        else{//登录失败
-            qjsonObj["tag"] = "login";
-            qjsonObj["answer"] = "denglushibai";
-            jsonDoc = QJsonDocument(qjsonObj);
-            jsonData = jsonDoc.toJson();
-            //发送消息
-            jsonDoc = QJsonDocument(qjsonObj);
-            jsonData = jsonDoc.toJson();
-            //添加标识符
-            QByteArray messageWithSeparator = jsonData + "END";
-            //发送JSON 数据
-            socket->write(messageWithSeparator);
-            socket->flush();
-            jsonData.clear();
-        }
+    }
+    if(flag){
+        QJsonObject qjson;
+        qjson["tag"] = "kickedoffline";
+        connect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
+        emit sendMessage(qjson);
+        QTimer::singleShot(0, this, [this, it]() {
+            disconnect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
+        });
     }
 }
 
@@ -661,33 +668,35 @@ void ClientHandler::dealLoginFirst(const QJsonObject &json)//处理用户登录�
 
 void ClientHandler::dealDeleteFriend(const QJsonObject &json)//处理删除好友的操作
 {
-    QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
-    QSqlQuery qry(db);
-    QJsonObject qjsonObj;
     bool deleteSucceed = false;
-    //开始事务
-    if (!db.transaction()) {
-        qDebug() << "开始事务失败:" << db.lastError().text();
-        return;
+    {
+        QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
+        QSqlQuery qry(db);
+        QJsonObject qjsonObj;
+        //开始事务
+        if (!db.transaction()) {
+            qDebug() << "开始事务失败:" << db.lastError().text();
+            return;
+        }
+        qry.prepare("DELETE FROM Friends WHERE (user_id = :account AND friend_id = :friend) OR (user_id = :friend AND friend_id = :account)");
+        qry.bindValue(":account", json["account"].toString());
+        qry.bindValue(":friend", json["friend"].toString());
+        if (!qry.exec()) {
+            qDebug() << "删除好友失败" << qry.lastError().text();
+            db.rollback();//回滚事务
+            qjsonObj["tag"] = "deletefriendfail";
+        } else {
+            db.commit();//提交事务
+            qjsonObj["tag"] = "deletefriendsucceed";
+            qjsonObj["account"] = json["friend"];//被用户删除的人
+            qDebug() << "删除好友成功";
+            deleteSucceed = true;
+        }
+        //发送消息
+        QByteArray messageWithSeparator = QJsonDocument(qjsonObj).toJson() + "END";//添加标识符
+        socket->write(messageWithSeparator);
+        socket->flush();
     }
-    qry.prepare("DELETE FROM Friends WHERE (user_id = :account AND friend_id = :friend) OR (user_id = :friend AND friend_id = :account)");
-    qry.bindValue(":account", json["account"].toString());
-    qry.bindValue(":friend", json["friend"].toString());
-    if (!qry.exec()) {
-        qDebug() << "删除好友失败" << qry.lastError().text();
-        db.rollback();//回滚事务
-        qjsonObj["tag"] = "deletefriendfail";
-    } else {
-        db.commit();//提交事务
-        qjsonObj["tag"] = "deletefriendsucceed";
-        qjsonObj["account"] = json["friend"];//被用户删除的人
-        qDebug() << "删除好友成功";
-        deleteSucceed = true;
-    }
-    //发送消息
-    QByteArray messageWithSeparator = QJsonDocument(qjsonObj).toJson() + "END";//添加标识符
-    socket->write(messageWithSeparator);
-    socket->flush();
     //如果删除好友成功 则查看被删除的人是否在线 在线则更新它的好友列表
     if (deleteSucceed){//如果删除成功
         auto it = getClient(json["friend"].toString());//it代表被删除人的ClientHandler
@@ -904,77 +913,81 @@ void ClientHandler::dealAddFriends(const QJsonObject &json)//处理用户发送�
     auto it = getClient(json["friend"].toString());//it代表接收人的ClientHandler
     if (it == nullptr) {
         qDebug() << "当前用户不在线:" << json["friend"].toString();
-        QMutexLocker locker(&dbMutex); // 锁住互斥量以确保线程安全
-        QSqlQuery qry(db);
-        //检查是否已存在记录
-        qry.prepare("SELECT COUNT(*) FROM FriendRequests WHERE sender_id = :sender AND receiver_id = :receiver AND status = :status");
-        qry.bindValue(":sender", json["account"].toString());
-        qry.bindValue(":receiver", json["friend"].toString());
-        qry.bindValue(":status", "pending");
-        if (!qry.exec()) {
-            qDebug() << "查询失败" << qry.lastError().text();
-            return;
-        }
-        qry.next();
-        if (qry.value(0).toInt() > 0) {
-            qDebug() << "好友申请已存在，未重复添加";
-            return; //如果记录已存在，则返回
-        }
-        //记录不存在，执行插入
-        //开始事务
-        if (!db.transaction()) {
-            qDebug() << "开始事务失败:" << db.lastError().text();
-            return;
-        }
-        qry.prepare("INSERT INTO FriendRequests(sender_id, receiver_id, request_type) "
-                    "VALUES(:sender, :receiver, :request_type)");
-        qry.bindValue(":sender", json["account"].toString());
-        qry.bindValue(":receiver", json["friend"].toString());
-        qry.bindValue(":request_type", "friend");
-        //执行查询并检查结果
-        if (!qry.exec()) {
-            qDebug() << "执行失败" << qry.lastError().text();
-            db.rollback();
-        }
-        else{
-            db.commit();
+        {
+            QMutexLocker locker(&dbMutex); // 锁住互斥量以确保线程安全
+            QSqlQuery qry(db);
+            //检查是否已存在记录
+            qry.prepare("SELECT COUNT(*) FROM FriendRequests WHERE sender_id = :sender AND receiver_id = :receiver AND status = :status");
+            qry.bindValue(":sender", json["account"].toString());
+            qry.bindValue(":receiver", json["friend"].toString());
+            qry.bindValue(":status", "pending");
+            if (!qry.exec()) {
+                qDebug() << "查询失败" << qry.lastError().text();
+                return;
+            }
+            qry.next();
+            if (qry.value(0).toInt() > 0) {
+                qDebug() << "好友申请已存在，未重复添加";
+                return; //如果记录已存在，则返回
+            }
+            //记录不存在，执行插入
+            //开始事务
+            if (!db.transaction()) {
+                qDebug() << "开始事务失败:" << db.lastError().text();
+                return;
+            }
+            qry.prepare("INSERT INTO FriendRequests(sender_id, receiver_id, request_type) "
+                        "VALUES(:sender, :receiver, :request_type)");
+            qry.bindValue(":sender", json["account"].toString());
+            qry.bindValue(":receiver", json["friend"].toString());
+            qry.bindValue(":request_type", "friend");
+            //执行查询并检查结果
+            if (!qry.exec()) {
+                qDebug() << "执行失败" << qry.lastError().text();
+                db.rollback();
+            }
+            else{
+                db.commit();
+            }
         }
     }
     else{
-        QMutexLocker locker(&dbMutex); // 锁住互斥量以确保线程安全
-        QSqlQuery qry(db);
-        //检查是否已存在记录
-        qry.prepare("SELECT COUNT(*) FROM FriendRequests WHERE sender_id = :sender AND receiver_id = :receiver AND status = :status");
-        qry.bindValue(":sender", json["account"].toString());
-        qry.bindValue(":receiver", json["friend"].toString());
-        qry.bindValue(":status", "pending");
-        if (!qry.exec()) {
-            qDebug() << "查询失败" << qry.lastError().text();
-            return;
-        }
-        qry.next();
-        if (qry.value(0).toInt() > 0) {
-            qDebug() << "好友申请已存在，未重复添加";
-            return; //如果记录已存在，则返回
-        }
-        //记录不存在，执行插入
-        //开始事务
-        if (!db.transaction()) {
-            qDebug() << "开始事务失败:" << db.lastError().text();
-            return;
-        }
-        qry.prepare("INSERT INTO FriendRequests(sender_id, receiver_id, request_type) "
-                    "VALUES(:sender, :receiver, :request_type)");
-        qry.bindValue(":sender", json["account"].toString());
-        qry.bindValue(":receiver", json["friend"].toString());
-        qry.bindValue(":request_type", "friend");
-        //执行查询并检查结果
-        if (!qry.exec()) {
-            qDebug() << "执行失败" << qry.lastError().text();
-            db.rollback();
-        }
-        else{
-            db.commit();
+        {
+            QMutexLocker locker(&dbMutex); // 锁住互斥量以确保线程安全
+            QSqlQuery qry(db);
+            //检查是否已存在记录
+            qry.prepare("SELECT COUNT(*) FROM FriendRequests WHERE sender_id = :sender AND receiver_id = :receiver AND status = :status");
+            qry.bindValue(":sender", json["account"].toString());
+            qry.bindValue(":receiver", json["friend"].toString());
+            qry.bindValue(":status", "pending");
+            if (!qry.exec()) {
+                qDebug() << "查询失败" << qry.lastError().text();
+                return;
+            }
+            qry.next();
+            if (qry.value(0).toInt() > 0) {
+                qDebug() << "好友申请已存在，未重复添加";
+                return; //如果记录已存在，则返回
+            }
+            //记录不存在，执行插入
+            //开始事务
+            if (!db.transaction()) {
+                qDebug() << "开始事务失败:" << db.lastError().text();
+                return;
+            }
+            qry.prepare("INSERT INTO FriendRequests(sender_id, receiver_id, request_type) "
+                        "VALUES(:sender, :receiver, :request_type)");
+            qry.bindValue(":sender", json["account"].toString());
+            qry.bindValue(":receiver", json["friend"].toString());
+            qry.bindValue(":request_type", "friend");
+            //执行查询并检查结果
+            if (!qry.exec()) {
+                qDebug() << "执行失败" << qry.lastError().text();
+                db.rollback();
+            }
+            else{
+                db.commit();
+            }
         }
         connect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
         emit sendMessage(json);
@@ -987,79 +1000,81 @@ void ClientHandler::dealAddFriends(const QJsonObject &json)//处理用户发送�
 
 void ClientHandler::dealAddNewFriends(const QJsonObject &json)//处理用户回应是否添加好友的功能
 {
-    QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
-    QSqlQuery qry(db);
-    QJsonObject qjsonObj;
-    qjsonObj["sender"] = json["sender"];
-    if (json["answer"] == "reject") {//拒绝好友申请
-        qjsonObj["type"] = "reject";
-        qry.prepare("UPDATE FriendRequests SET status = 'rejected' WHERE sender_id = :sender_id AND receiver_id = :receiver_id");
-        qry.bindValue(":sender_id", json["sender"].toString());
-        qry.bindValue(":receiver_id", json["account"].toString());
-        if (!qry.exec()) {
-            qDebug() << "更新好友申请失败" << qry.lastError().text();
-            qjsonObj["tag"] = "updatefriendship";
-            qjsonObj["answer"] = "fail";
-        } else {
-            qjsonObj["tag"] = "updatefriendship";
-            qjsonObj["answer"] = "true";
-        }
-    }
-    else if (json["answer"] == "accept") {//接受好友申请
-        qjsonObj["type"] = "accept";
-        db.transaction(); //开始事务
-        qry.prepare("UPDATE FriendRequests SET status = 'accepted' WHERE sender_id = :sender_id AND receiver_id = :receiver_id");
-        qry.bindValue(":sender_id", json["sender"].toString());
-        qry.bindValue(":receiver_id", json["account"].toString());
-        if (!qry.exec()) {
-            qDebug() << "更新好友申请失败" << qry.lastError().text();
-            qjsonObj["tag"] = "updatefriendship";
-            qjsonObj["answer"] = "fail";
-            db.rollback(); //回滚事务
-        } else {
-            //检查好友关系是否已存在
-            qry.prepare("SELECT COUNT(*) FROM Friends WHERE (user_id = :user_id AND friend_id = :friend_id) OR (user_id = :friend_id AND friend_id = :user_id)");
-            qry.bindValue(":user_id", json["account"].toString());
-            qry.bindValue(":friend_id", json["sender"].toString());
-            qry.exec();
-            qry.next();
-            if (qry.value(0).toInt() > 0) {
+    {
+        QMutexLocker locker(&dbMutex);//锁住互斥量以确保线程安全
+        QSqlQuery qry(db);
+        QJsonObject qjsonObj;
+        qjsonObj["sender"] = json["sender"];
+        if (json["answer"] == "reject") {//拒绝好友申请
+            qjsonObj["type"] = "reject";
+            qry.prepare("UPDATE FriendRequests SET status = 'rejected' WHERE sender_id = :sender_id AND receiver_id = :receiver_id");
+            qry.bindValue(":sender_id", json["sender"].toString());
+            qry.bindValue(":receiver_id", json["account"].toString());
+            if (!qry.exec()) {
+                qDebug() << "更新好友申请失败" << qry.lastError().text();
                 qjsonObj["tag"] = "updatefriendship";
-                qjsonObj["answer"] = "friendship_exists";
+                qjsonObj["answer"] = "fail";
+            } else {
+                qjsonObj["tag"] = "updatefriendship";
+                qjsonObj["answer"] = "true";
+            }
+        }
+        else if (json["answer"] == "accept") {//接受好友申请
+            qjsonObj["type"] = "accept";
+            db.transaction(); //开始事务
+            qry.prepare("UPDATE FriendRequests SET status = 'accepted' WHERE sender_id = :sender_id AND receiver_id = :receiver_id");
+            qry.bindValue(":sender_id", json["sender"].toString());
+            qry.bindValue(":receiver_id", json["account"].toString());
+            if (!qry.exec()) {
+                qDebug() << "更新好友申请失败" << qry.lastError().text();
+                qjsonObj["tag"] = "updatefriendship";
+                qjsonObj["answer"] = "fail";
                 db.rollback(); //回滚事务
             } else {
-                //插入好友关系
-                qry.prepare("INSERT INTO Friends(user_id, friend_id) VALUES(:user_id, :friend_id)");
+                //检查好友关系是否已存在
+                qry.prepare("SELECT COUNT(*) FROM Friends WHERE (user_id = :user_id AND friend_id = :friend_id) OR (user_id = :friend_id AND friend_id = :user_id)");
                 qry.bindValue(":user_id", json["account"].toString());
                 qry.bindValue(":friend_id", json["sender"].toString());
-                if (!qry.exec()) {
-                    qDebug() << "更新好友关系失败" << qry.lastError().text();
+                qry.exec();
+                qry.next();
+                if (qry.value(0).toInt() > 0) {
                     qjsonObj["tag"] = "updatefriendship";
-                    qjsonObj["answer"] = "fail";
+                    qjsonObj["answer"] = "friendship_exists";
                     db.rollback(); //回滚事务
                 } else {
-                    //插入反向好友关系
-                    qry.prepare("INSERT INTO Friends(user_id, friend_id) VALUES(:friend_id, :user_id)");
-                    qry.bindValue(":friend_id", json["sender"].toString());
+                    //插入好友关系
+                    qry.prepare("INSERT INTO Friends(user_id, friend_id) VALUES(:user_id, :friend_id)");
                     qry.bindValue(":user_id", json["account"].toString());
+                    qry.bindValue(":friend_id", json["sender"].toString());
                     if (!qry.exec()) {
-                        qDebug() << "更新反向好友关系失败" << qry.lastError().text();
+                        qDebug() << "更新好友关系失败" << qry.lastError().text();
                         qjsonObj["tag"] = "updatefriendship";
                         qjsonObj["answer"] = "fail";
                         db.rollback(); //回滚事务
                     } else {
-                        db.commit(); //提交事务
-                        qjsonObj["tag"] = "updatefriendship";
-                        qjsonObj["answer"] = "succeed";
+                        //插入反向好友关系
+                        qry.prepare("INSERT INTO Friends(user_id, friend_id) VALUES(:friend_id, :user_id)");
+                        qry.bindValue(":friend_id", json["sender"].toString());
+                        qry.bindValue(":user_id", json["account"].toString());
+                        if (!qry.exec()) {
+                            qDebug() << "更新反向好友关系失败" << qry.lastError().text();
+                            qjsonObj["tag"] = "updatefriendship";
+                            qjsonObj["answer"] = "fail";
+                            db.rollback(); //回滚事务
+                        } else {
+                            db.commit(); //提交事务
+                            qjsonObj["tag"] = "updatefriendship";
+                            qjsonObj["answer"] = "succeed";
+                        }
                     }
                 }
             }
         }
+        //发送消息
+        QByteArray messageWithSeparator = QJsonDocument(qjsonObj).toJson() + "END"; // 添加标识符
+        socket->write(messageWithSeparator);
+        socket->flush();
     }
-    //发送消息
-    QByteArray messageWithSeparator = QJsonDocument(qjsonObj).toJson() + "END"; // 添加标识符
-    socket->write(messageWithSeparator);
-    socket->flush();
     //如果添加好友成功 则查看申请人是否在线 在线则更新它的好友列表
     if (json["answer"] == "accept"){//如果是接受了
         auto it = getClient(json["sender"].toString());//it代表发送申请人的ClientHandler
@@ -1092,42 +1107,50 @@ void ClientHandler::dealMessages(const QJsonObject json)//处理用户发送的�
         }
         return;
     }
-    QSqlDatabase db = pool.getConnection();
-    QSqlQuery qry(db);
-    qry.prepare("INSERT INTO Messages (sender_id, receiver_id, content, message_type, status, timestamp, filename) "
-                "VALUES (:sender, :receiver, :content, :messagetype, :status, :timestamp, :filename)");
-    qry.bindValue(":sender", json["sender"].toVariant());
-    qry.bindValue(":receiver", json["receiver"].toVariant());
-    qry.bindValue(":content", json["messages"].toVariant());
-    qry.bindValue(":messagetype", json["messagetype"].toVariant());
-    qry.bindValue(":status", json["status"].toVariant());
-    qry.bindValue(":timestamp", json["timestamp"].toVariant());
-    qry.bindValue(":filename", json["filename"].toVariant());
-    //检查接收人是否在线
-    auto it = getClient(json["receiver"].toString());
-    if (it == nullptr) {
-        qry.bindValue(":status", "unread");
-    } else {//接收人在线
-        QJsonObject responseJson;
-        responseJson["tag"] = "yourmessages";
-        responseJson["sender"] = json["sender"];
-        responseJson["messagetype"] = json["messagetype"];
-        responseJson["receiver"] = json["receiver"];
-        responseJson["messages"] = (json["messagetype"].toString() != "document") ? json["messages"] : json["filename"];
-        responseJson["timestamp"] = json["timestamp"];
+    QJsonObject responseJson;
+    bool flag = false;
+    ClientHandler* it;
+    {
+        QMutexLocker locker(&dbMutex);
+        QSqlDatabase db = pool.getConnection();
+        QSqlQuery qry(db);
+        qry.prepare("INSERT INTO Messages (sender_id, receiver_id, content, message_type, status, timestamp, filename) "
+                    "VALUES (:sender, :receiver, :content, :messagetype, :status, :timestamp, :filename)");
+        qry.bindValue(":sender", json["sender"].toVariant());
+        qry.bindValue(":receiver", json["receiver"].toVariant());
+        qry.bindValue(":content", json["messages"].toVariant());
+        qry.bindValue(":messagetype", json["messagetype"].toVariant());
+        qry.bindValue(":status", json["status"].toVariant());
+        qry.bindValue(":timestamp", json["timestamp"].toVariant());
+        qry.bindValue(":filename", json["filename"].toVariant());
+        //检查接收人是否在线
+        it = getClient(json["receiver"].toString());
+        if (it == nullptr) {
+            qry.bindValue(":status", "unread");
+        } else {//接收人在线
+            responseJson["tag"] = "yourmessages";
+            responseJson["sender"] = json["sender"];
+            responseJson["messagetype"] = json["messagetype"];
+            responseJson["receiver"] = json["receiver"];
+            responseJson["messages"] = (json["messagetype"].toString() != "document") ? json["messages"] : json["filename"];
+            responseJson["timestamp"] = json["timestamp"];
+            qry.bindValue(":status", "haveread");
+            flag = true;
+        }
+        //执行 SQL 查询
+        if (!qry.exec()) {
+            qDebug() << "消息插入失败: " << qry.lastError().text();
+        }
+        pool.releaseConnection(db);
+    }
+    if(flag){
         connect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
         emit sendMessage(responseJson);
         //断开连接的定时器
         QTimer::singleShot(0, this, [this, it]() {
             disconnect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
         });
-        qry.bindValue(":status", "haveread");
     }
-    //执行 SQL 查询
-    if (!qry.exec()) {
-        qDebug() << "消息插入失败: " << qry.lastError().text();
-    }
-    pool.releaseConnection(db);
 }
 
 
@@ -1143,43 +1166,51 @@ void ClientHandler::sendNextMessage()//从队列发送下一条消息(处理文�
     isSending = true;
     //启动一个线程来处理发送消息
     QThreadPool::globalInstance()->start([this, json]() mutable {
+        ClientHandler* it;
+        bool flag = false;
+        QJsonObject responseJson;
         qDebug()<<"启动线程再处理一个文件";
-        QSqlDatabase db = pool.getConnection();
-        QSqlQuery qry(db);
-        qry.prepare("INSERT INTO Messages (sender_id, receiver_id, content, message_type, status, timestamp, filename) "
-                    "VALUES (:sender, :receiver, :content, :messagetype, :status, :timestamp, :filename)");
-        qry.bindValue(":sender", json["sender"].toVariant());
-        qry.bindValue(":receiver", json["receiver"].toVariant());
-        qry.bindValue(":content", json["messages"].toVariant());
-        qry.bindValue(":messagetype", json["messagetype"].toVariant());
-        qry.bindValue(":status", json["status"].toVariant());
-        qry.bindValue(":timestamp", json["timestamp"].toVariant());
-        qry.bindValue(":filename", json["filename"].toVariant());
-        //检查接收人是否在线
-        auto it = getClient(json["receiver"].toString());
-        if (it == nullptr) {
-            qry.bindValue(":status", "unread");
-        } else {//接收人在线
-            QJsonObject responseJson;
-            responseJson["tag"] = "yourmessages";
-            responseJson["sender"] = json["sender"];
-            responseJson["messagetype"] = json["messagetype"];
-            responseJson["receiver"] = json["receiver"];
-            responseJson["messages"] = (json["messagetype"].toString() != "document") ? json["messages"] : json["filename"];
-            responseJson["timestamp"] = json["timestamp"];
+        {
+            QMutexLocker locker(&dbMutex);
+            QSqlDatabase db = pool.getConnection();
+            QSqlQuery qry(db);
+            qry.prepare("INSERT INTO Messages (sender_id, receiver_id, content, message_type, status, timestamp, filename) "
+                        "VALUES (:sender, :receiver, :content, :messagetype, :status, :timestamp, :filename)");
+            qry.bindValue(":sender", json["sender"].toVariant());
+            qry.bindValue(":receiver", json["receiver"].toVariant());
+            qry.bindValue(":content", json["messages"].toVariant());
+            qry.bindValue(":messagetype", json["messagetype"].toVariant());
+            qry.bindValue(":status", json["status"].toVariant());
+            qry.bindValue(":timestamp", json["timestamp"].toVariant());
+            qry.bindValue(":filename", json["filename"].toVariant());
+            //检查接收人是否在线
+            it = getClient(json["receiver"].toString());
+            if (it == nullptr) {
+                qry.bindValue(":status", "unread");
+            } else {//接收人在线
+                responseJson["tag"] = "yourmessages";
+                responseJson["sender"] = json["sender"];
+                responseJson["messagetype"] = json["messagetype"];
+                responseJson["receiver"] = json["receiver"];
+                responseJson["messages"] = (json["messagetype"].toString() != "document") ? json["messages"] : json["filename"];
+                responseJson["timestamp"] = json["timestamp"];
+                flag = true;
+                qry.bindValue(":status", "haveread");
+            }
+            //执行SQL查询
+            if (!qry.exec()) {
+                qDebug() << "消息插入失败: " << qry.lastError().text();
+            }
+            pool.releaseConnection(db);
+        }
+        if(flag){
             connect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
             emit sendMessage(responseJson);
             //断开连接的定时器
             QTimer::singleShot(0, this, [this, it]() {
                 disconnect(this, &ClientHandler::sendMessage, it, &ClientHandler::receiveMessage);
             });
-            qry.bindValue(":status", "haveread");
         }
-        //执行SQL查询
-        if (!qry.exec()) {
-            qDebug() << "消息插入失败: " << qry.lastError().text();
-        }
-        pool.releaseConnection(db);
         //发送下一条消息
         qDebug()<<"线程处理消息结束";
         sendNextMessage();
