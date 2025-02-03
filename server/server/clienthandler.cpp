@@ -6,6 +6,8 @@ ClientHandler::ClientHandler(QTcpSocket *socket, ConnectionPool& pool, Server *s
     //连接数据库
     databasesConnect();
 }
+QMutex ClientHandler::dbMutex;
+QReadWriteLock ClientHandler::lock;
 
 
 ClientHandler::~ClientHandler()
@@ -63,7 +65,8 @@ void ClientHandler::removeClient(const QString &account)//用户断开连接 删
 }
 
 
-ClientHandler* ClientHandler::getClient(const QString &account) {
+ClientHandler* ClientHandler::getClient(const QString &account)//获得某个账号对应的ClientHandler
+{
     QReadLocker locker(&lock);//获取读锁
     if (srv->clientsMap.contains(account)) {
         return srv->clientsMap.value(account);//返回对应的 ClientHandler 指针
@@ -1083,11 +1086,11 @@ void ClientHandler::dealMessages(const QJsonObject json)//处理用户发送的�
         QMutexLocker locker(&mutex);
         //将消息加入队列
         messageQueue.enqueue(json);
-        if (!isSending) {
-            //如果当前没有正在发送的消息，则立即开始发送
+        //处理文件
+        if(!isSending){
             sendNextMessage();
-            return;
         }
+        return;
     }
     QSqlDatabase db = pool.getConnection();
     QSqlQuery qry(db);
@@ -1125,8 +1128,6 @@ void ClientHandler::dealMessages(const QJsonObject json)//处理用户发送的�
         qDebug() << "消息插入失败: " << qry.lastError().text();
     }
     pool.releaseConnection(db);
-    //发送下一条消息
-    sendNextMessage();
 }
 
 
@@ -1180,7 +1181,7 @@ void ClientHandler::sendNextMessage()//从队列发送下一条消息(处理文�
         }
         pool.releaseConnection(db);
         //发送下一条消息
-        qDebug()<<"线程处理文件结束";
+        qDebug()<<"线程处理消息结束";
         sendNextMessage();
     });
 }
