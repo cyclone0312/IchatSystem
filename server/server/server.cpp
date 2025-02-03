@@ -4,7 +4,7 @@
 
 Server::Server(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::Server)
+    ， ui(new Ui::Server)
 {
     ui->setupUi(this);
     //使用全局线程池
@@ -21,7 +21,6 @@ Server::Server(QWidget *parent)
 
 
 Server::~Server(){
-    delete TCP;
     delete ui;
 }
 
