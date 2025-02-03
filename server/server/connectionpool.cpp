@@ -122,7 +122,8 @@ ConnectionPool::ConnectionPool() : maxConnections(301)//私有构造函数  默�
         if (query.lastError().isValid()) {
             qDebug() << "创建申请表失败:" << query.lastError().text();
     }
-}
+        db.close();
+  }
 }
 
 
