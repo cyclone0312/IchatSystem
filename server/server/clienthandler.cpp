@@ -304,7 +304,6 @@ void ClientHandler::dealRegister(const QJsonObject &json)//处理注册请求
             //准备 SQL 插入语句
             qry.prepare("INSERT INTO Users (qq_number, nickname, signature, gender, password, question,answer) "
                         "VALUES (:qq_number, :nickname, :signature, :gender, :password, :question,:answer)");
-
             //绑定参数
             qry.bindValue(":qq_number", randomNumber);
             qry.bindValue(":nickname", nickname);
@@ -1223,12 +1222,14 @@ void ClientHandler::dealAskDocument(const QJsonObject &json)//处理用户要下
     qDebug()<<"有人想要文件";
     QString filename = json["filename"].toString();
     QString timestamp = json["timestamp"].toString();
+    QSqlDatabase db = pool.getConnection();
     DocumentWorker* worker = new DocumentWorker(filename, timestamp, db);
     QThread *thread = QThread::create([=]() {
-        connect(worker, &DocumentWorker::resultReady, this, [this, &worker](const QJsonObject &result) {
+        connect(worker, &DocumentWorker::resultReady, this, [this, &worker, &db](const QJsonObject &result) {
             QByteArray messageWithSeparator = QJsonDocument(result).toJson() + "END";
             socket->write(messageWithSeparator);
             socket->flush();
+            pool.releaseConnection(db);
             worker->deleteLater();
         });
         worker->process();//开始处理
