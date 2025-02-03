@@ -4,12 +4,12 @@
 
 Server::Server(QWidget *parent)
     : QMainWindow(parent)
-    ， ui(new Ui::Server)
+    , ui(new Ui::Server)
 {
     ui->setupUi(this);
     //使用全局线程池
     threadPool = QThreadPool::globalInstance();
-    QThreadPool::globalInstance()->setMaxThreadCount(300);
+    QThreadPool::globalInstance()->setMaxThreadCount(1500);
     //连接数据库
     databasesConnect();
     //显示表格
@@ -102,19 +102,12 @@ void Server::on_sqlsubmit_clicked()//提交执行SQL语句
 
 void Server::onNewConnection()//有新连接到来新建clienthandler
 {
+    qDebug()<<"主线程是"<<QThread::currentThread()->currentThreadId();
     QTcpSocket *socket = TCP->nextPendingConnection();
     ConnectionPool& pool = ConnectionPool::getInstance();//获取连接池实例
     ClientHandler* handler = new ClientHandler(socket, pool, this);
-    QThreadPool::globalInstance()->start([handler, socket]() {
-        connect(socket, &QTcpSocket::readyRead, handler, &ClientHandler::onReadyRead);
-        connect(socket, &QTcpSocket::disconnected, handler, &ClientHandler::onDisconnected);
-        connect(socket, &QTcpSocket::disconnected, [socket]() {
-            socket->deleteLater();
-        });
-        connect(socket, &QTcpSocket::disconnected, [handler]() {
-            handler->deleteLater();
-        });
-    });
+    QThreadPool::globalInstance()->start([handler] {
+        handler->run();});
 }
 
 
