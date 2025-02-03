@@ -27,12 +27,13 @@
 
 class Server;
 
-class ClientHandler : public QObject//用来处理消息的类
+class ClientHandler : public QThread//用来处理消息的类
 {
     Q_OBJECT
 public:
     ClientHandler(QTcpSocket *socket,ConnectionPool& pool,Server *srv);
     ~ClientHandler();
+    void run() override;//启用事件循环
     bool databasesConnect();//连接数据库
     void addClient(const QString &account, ClientHandler *client);//将登录成功的用户增加到哈希存储
     void removeClient(const QString &account);//用户断开连接 删除对应的哈希存储
@@ -111,6 +112,7 @@ public slots:
 
 private:
     QString filename;
+    QMutex dbMutex;
     QString timestamp;
     QSqlDatabase db;
 };
