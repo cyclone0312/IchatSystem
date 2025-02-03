@@ -78,8 +78,8 @@ signals:
     void sendMessage(const QJsonObject &json);//给别的客户端发送消息
 
 private:
-    QMutex dbMutex;
-    QReadWriteLock lock;//读写锁
+    static QMutex dbMutex;
+    static QReadWriteLock lock;
     QMutex mutex;
     ConnectionPool& pool;
     QSqlDatabase db;
@@ -112,7 +112,6 @@ public slots:
 
 private:
     QString filename;
-    QMutex dbMutex;
     QString timestamp;
     QSqlDatabase db;
 };
