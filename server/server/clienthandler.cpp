@@ -160,7 +160,7 @@ void ClientHandler::onDisconnected()//有用户断联了
     if(account != "0"){
         removeClient(account);
     }
-    delete this;
+    this->deleteLater();
 }
 
 
