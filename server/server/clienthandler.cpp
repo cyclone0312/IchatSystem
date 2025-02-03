@@ -1,7 +1,7 @@
 #include "clienthandler.h"
 
 ClientHandler::ClientHandler(QTcpSocket *socket, ConnectionPool& pool, Server *srv)
-    : pool(pool) ， socket(socket) ， srv(srv)
+    : pool(pool) , socket(socket) , srv(srv)
 {
     //连接数据库
     databasesConnect();
@@ -15,6 +15,14 @@ ClientHandler::~ClientHandler()
     }
     this->disconnect();
     qDebug()<<"某个handler被释放";
+}
+
+
+void ClientHandler::run()//启用事件循环
+{
+    connect(socket, &QTcpSocket::readyRead, this, &ClientHandler::onReadyRead);
+    connect(socket, &QTcpSocket::disconnected, this, &ClientHandler::onDisconnected);
+    qDebug()<<"当前所在线程"<<QThread::currentThread()->currentThreadId();
 }
 
 
@@ -152,6 +160,7 @@ void ClientHandler::onDisconnected()//有用户断联了
     if(account != "0"){
         removeClient(account);
     }
+    delete this;
 }
 
 
@@ -1292,14 +1301,16 @@ void DocumentWorker::process()//处理查询文件
     qry.prepare("SELECT content FROM Messages WHERE filename = :filename AND timestamp = :timestamp");
     qry.bindValue(":filename", filename);
     qry.bindValue(":timestamp", timestamp);
+    qDebug()<<filename<<timestamp;
     if (qry.exec() && qry.next()) {
         qjsonObj["tag"] = "document";
         qjsonObj["filename"] = filename;
         qjsonObj["data"] = qry.value("content").toString();
+        qDebug()<<"文件查询完毕";
     } else {
         qjsonObj["tag"] = "error";
         qjsonObj["message"] = "File not found";
+        qDebug()<<"文件查询失败";
     }
     emit resultReady(qjsonObj); //发射信号，将结果发送回主线程
-    qDebug()<<"文件查询完毕";
 }
