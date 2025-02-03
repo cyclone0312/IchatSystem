@@ -7,9 +7,6 @@ Server::Server(QWidget *parent)
     ， ui(new Ui::Server)
 {
     ui->setupUi(this);
-    //使用全局线程池
-    threadPool = QThreadPool::globalInstance();
-    QThreadPool::globalInstance()->setMaxThreadCount(1500);
     //连接数据库
     databasesConnect();
     //显示表格
