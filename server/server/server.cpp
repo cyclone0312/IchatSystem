@@ -4,7 +4,7 @@
 
 Server::Server(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::Server)
+    ， ui(new Ui::Server)
 {
     ui->setupUi(this);
     //使用全局线程池
@@ -106,8 +106,7 @@ void Server::onNewConnection()//有新连接到来新建clienthandler
     QTcpSocket *socket = TCP->nextPendingConnection();
     ConnectionPool& pool = ConnectionPool::getInstance();//获取连接池实例
     ClientHandler* handler = new ClientHandler(socket, pool, this);
-    QThreadPool::globalInstance()->start([handler] {
-        handler->run();});
+    handler->start();
 }
 
 
