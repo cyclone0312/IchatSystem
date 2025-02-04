@@ -30,20 +30,20 @@ MainWindow::MainWindow(const QString accountNumber0, QWidget *parent)
     //连接到服务器
     tcpConnect();
     //连接 socket的信号槽
-    connect(socket, &QTcpSocket::readyRead, this， &MainWindow::onReadyRead);
+    connect(socket, &QTcpSocket::readyRead, this, &MainWindow::onReadyRead);
     //连接聊天列表右键菜单和窗体的信号槽
-    connect(ui->list_talks， &TalkList::choiceDone, this， &MainWindow::listtalkChoice);
+    connect(ui->list_talks, &TalkList::choiceDone, this, &MainWindow::listtalkChoice);
     //设置聊天页面先不显示好友名字
     ui->lab_friendname->setText("");
     //设置聊天页面先不可输入
     ui->edit_input->setEnabled(false);
     //连接聊天输入框的回车和提交
-    connect(ui->edit_input， &EnterTextEdit::enterKey, [this] (){
+    connect(ui->edit_input, &EnterTextEdit::enterKey, [this] (){
         if(ui->but_send->isEnabled() && !ui->edit_input->toPlainText().isEmpty()){
             ui->but_send->click();}
     });
     //连接保存文件完成后弹窗
-    connect(this， &MainWindow::saveDone, [this] (const QString &status){
+    connect(this, &MainWindow::saveDone, [this] (const QString &status){
         Dialog dialog(this);
         dialog.transText(status);
         dialog.exec();
@@ -55,9 +55,9 @@ MainWindow::MainWindow(const QString accountNumber0, QWidget *parent)
     ui->list_talks->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->list_friends->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     //连接左上角头像和弹出修改信息窗口的信号槽
-    connect(ui->lab_avator， &LabelAva::changeInfo, this， &MainWindow::changeInfo);
+    connect(ui->lab_avator, &LabelAva::changeInfo, this, &MainWindow::changeInfo);
     //通过定时器延迟
-    QTimer::singleShot(150， this， [this， accountNumber = this->accountNumber]() {
+    QTimer::singleShot(150, this, [this, accountNumber = this->accountNumber]() {
         //发送已经登录的信号
         havelogin(accountNumber);//收到回复后依次调用加载消息列表 加载聊天记录
         //设置按钮位置
@@ -77,8 +77,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::initAvatar()//初始化头像
 {
-    //获取应用程序的专用目录
-    QString appDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    //获取运行时目录
+    QString appDir = QCoreApplication::applicationDirPath();
     QDir dir(appDir);
     if (!dir.exists()) {
         dir.mkpath(".");
@@ -373,7 +373,7 @@ void MainWindow::setupMessageList(QListWidget *list)//设置消息页面模型
 bool MainWindow::tcpConnect()//连接服务器
 {
     if (socket->state() != QAbstractSocket::ConnectedState){
-        socket->connectToHost("192.168.220.1", 1999);//修改这个地方
+        socket->connectToHost("127.0.0.1", 1999);//修改这个地方
         if (socket->waitForConnected(1000)) {
             qDebug() << "主窗口连接服务器成功";
             return true;
@@ -656,6 +656,7 @@ void MainWindow::addMessageTo(const QWidget *page, const QString &sender, const 
     QString time;
     //处理时间戳
     if (printTimeOrNot(timestamp, list->objectName(), time)) {
+        list->setObjectName(timestamp);
         //创建新的QListWidgetItem
         QListWidgetItem *item = new QListWidgetItem();
         //创建一个QWidget 来显示时间戳
@@ -671,7 +672,7 @@ void MainWindow::addMessageTo(const QWidget *page, const QString &sender, const 
         list->addItem(item);
         list->setItemWidget(item, itemWidget);
     }
-            list->setObjectName(timestamp);
+    list->setObjectName(timestamp);
     //创建发送者头像
     LabelFriendAvaInMessage *senderAva = new LabelFriendAvaInMessage;
     senderAva->setScaledContents(true);
@@ -2506,8 +2507,8 @@ void MainWindow::changeMyInfo(const QJsonObject& json)//修改用户信息的结
             qDebug() << "无法从数据加载图像";
             return;
         }
-        //获取应用程序的专用目录
-        QString appDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        //获取运行时目录
+        QString appDir = QCoreApplication::applicationDirPath();
         QDir dir(appDir);
         //创建目录（如果不存在）
         if (!dir.exists()) {
@@ -2544,8 +2545,8 @@ void MainWindow::logoutAns(const QJsonObject& json)//注销的结果
         settings.setValue("lastlogin", "");
         set.setValue("autologin", false);
         set.setValue("autologinuser", "");
-        //获取应用程序的专用目录
-        QString appDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        //获取运行时目录目录
+        QString appDir = QCoreApplication::applicationDirPath();
         QDir dir(appDir);
         //创建目录（如果不存在）
         if (!dir.exists()) {
@@ -2710,8 +2711,8 @@ void MainWindow::dealDocument(const QJsonObject& json)//处理接收到的文件
         QByteArray fileData = QByteArray::fromBase64(json["data"].toString().toUtf8());
         QFile file(savePath);
         if (file.open(QIODevice::WriteOnly)) {
-            file.write(fileData);
-            file.close();
+            文件。write(fileData);
+            文件。close();
             qDebug() << "文件保存成功:" << savePath;
             //在主线程中发送信号
             QMetaObject::invokeMethod(this, "handleSaveDone", Qt::QueuedConnection, Q_ARG(QString, "保存成功"));
