@@ -98,12 +98,12 @@ private:
     QJsonDocument jsonDoc;
     QByteArray jsonData;
     QRegularExpressionValidator *validator;
-    QSettings settings;
+    QSettings settings = QSettings("settings.ini", QSettings::IniFormat);
     /*存储
     /  lastlogin: 上次成功登录的用户名。如果有说明则有人记住密码了 没有则说明没人记住密码 不必理会
     /  账号/password: 与特定用户相关联的密码。分组存储 组名是账号
     */
-    QSettings set;
+    QSettings set = QSettings("set.ini", QSettings::IniFormat);
     /*存储
     /  autologin: 是否启用自动登录的布尔值。
     /  autologinuser: 自动登录的用户名。加载后去setting中找密码
