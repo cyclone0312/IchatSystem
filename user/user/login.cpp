@@ -3,11 +3,11 @@
 
 Login::Login(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::Login),settings("settings.ini", QSettings::IniFormat),set("set.ini", QSettings::IniFormat)
+    , ui(new Ui::Login)
 {
     ui->setupUi(this);
     //初始化窗口
-    QIcon icon(":/pictures/suliao.png");
+    QIcon icon(":/pictures/suliao_avator.png");
     setWindowIcon(icon);
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     //初始化头像
@@ -40,11 +40,8 @@ Login::~Login()
 
 void Login::setAva()//初始化头像
 {
-    QPixmap pixmap(":/pictures/suliao_avator_normal.jpg");//默认头像
-    pixmap = pixmap.scaled(100, 100, Qt::KeepAspectRatio);
-    ui->lab_avator->setPixmap(pixmap);
     //获取应用程序的专用目录
-    QString appDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString appDir = QCoreApplication::applicationDirPath();
     QDir dir(appDir);
     //创建目录（如果不存在）
     if (!dir.exists()) {
@@ -55,7 +52,11 @@ void Login::setAva()//初始化头像
         QPixmap newpixmap(saveLoginAvatorPath);
         newpixmap = newpixmap.scaled(100, 100, Qt::KeepAspectRatio);
         ui->lab_avator->setPixmap(newpixmap);
+        return;
     }
+    QPixmap pixmap(":/pictures/suliao_avator_normal.jpg");//默认头像
+    pixmap = pixmap.scaled(100, 100, Qt::KeepAspectRatio);
+    ui->lab_avator->setPixmap(pixmap);
 }
 
 
@@ -92,7 +93,7 @@ void Login::setTimer()//设置一些计时器 用于动态背景与动态按钮
 bool Login::tcpConnect()//连接服务器
 {
     if (socket.state() != QAbstractSocket::ConnectedState){
-        socket.connectToHost("192.168.220.1", 1999);//修改这个地方
+        socket.connectToHost("127.0.0.1", 1999);//修改这个地方
         if (socket.waitForConnected(1000)) {
             qDebug() << "连接成功";
             return true;
@@ -172,14 +173,9 @@ void Login::paintEvent(QPaintEvent *event)//绘画渐变背景
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);//反锯齿
     QLinearGradient gradient(0, 0, width(), height());//创建渐变
-    //计算颜色变化
-    int r1 = 255;//固定红色分量（白色）
     int g1 = 220 + (sin(offset * 0.06) * 30);//增加绿色分量变化
-    int r2 = 172;//固定红色分量（淡蓝色）
-    int g2 = 224;//固定绿色分量（淡蓝色）
-    int b2 = 249;//固定蓝色分量（淡蓝色）
-    gradient.setColorAt(0.0, QColor(r1, g1, 235));//动态渐变开始颜色
-    gradient.setColorAt(1.0, QColor(r2, g2, b2));//动态渐变结束颜色
+    gradient.setColorAt(0.0, QColor(255, g1, 235));//动态渐变开始颜色
+    gradient.setColorAt(1.0, QColor(172, 224, 249));//动态渐变结束颜色
     painter.setBrush(gradient);//使用渐变作为背景
     painter.drawRect(rect());
 }
