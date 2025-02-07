@@ -185,7 +185,7 @@ private:
     QVector<AccountInfo> newFriendArray;//好友申请列表
     QHash<QString, AccountInfo> friendHash;//以账号为索引存储好友列表
     QHash<QString, AccountInfo> messageListHash;//以账号为索引存储消息列表
-    QMap<QString, QPixmap> avatorMap;//存储头像
+    QHash<QString, QPixmap> avatorHash;//存储头像
     QJsonObject jsonObj;
     QJsonDocument jsonDoc;
     QByteArray jsonData;
