@@ -811,8 +811,8 @@ QPixmap MainWindow::loadAvator(const QString& friendId)//获得某人头像
     if (friendId.isEmpty()) {
         return QPixmap();
     }
-    auto it = avatorMap.find(friendId);
-    if (it != avatorMap.end()) {
+    auto it = avatorHash。find(friendId);
+    if (it != avatorHash。end()) {
         return it.value();
     } else {
         auto it1 = friendHash.find(friendId);
@@ -820,7 +820,7 @@ QPixmap MainWindow::loadAvator(const QString& friendId)//获得某人头像
             QString avator = it1.value().avator_base64;
             QPixmap pix = base64ToPixmap(avator);
             if (!pix.isNull()) {
-                avatorMap.insert(friendId, pix);
+                avatorHash。insert(friendId， pix);
             }
             return pix;
         } else {
