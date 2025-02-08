@@ -98,7 +98,7 @@ private:
                       const QString &message, const QString &timestamp);//把聊天记录添加到某个聊天页面(时间传入utc时间)
     void addMessageToDatabase(const QString &sender,const QString &receiver, const QString &messageType,//把聊天记录添加到本地数据库
                               const QString &message, const QString &timestamp);
-    QPixmap loadAvator(const QString& friendId);//获得某人头像
+    QPixmap& loadAvator(const QString& friendId);//获得某人头像
     bool printTimeOrNot(const QString& messageTime, const QString& preMessageTime, QString& result);//判断聊天时是否需要加载新的时间
     void checkFriendInTalk(const QString& friendId);//检查这个好友是不是已经有打开的聊天窗口了 如果没有 则打开一个
     void updateTalkList(const QString& friendId);//更新某人的消息列表信息
@@ -191,6 +191,7 @@ private:
     QByteArray jsonData;
     QMutex mutex;
     QString accountNumber;//账号
+    QPixmap defaultAva= QPixmap(":/pictures/suliao_avator_normal.jpg");
     QSqlDatabase db;//用户的数据库
     QTcpSocket *socket;
     QRegularExpressionValidator *validator;
