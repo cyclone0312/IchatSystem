@@ -328,7 +328,7 @@ void MainWindow::createUserDatabase(const QString& account)//在本地建立或�
                "messagetype VARCHAR(20)," //picture,text,document
                "message LONGTEXT,"
                "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
-
+    
     /*
     QString str = pixmapToBase64(ui->lab_avator->pixmap());
     query.prepare("INSERT INTO messages (sender, receiver, messagetype, message) "
@@ -338,7 +338,7 @@ void MainWindow::createUserDatabase(const QString& account)//在本地建立或�
     query.bindValue(":message", str);
     query.exec();
 */
-
+    
     query.exec("CREATE TABLE IF NOT EXISTS talks ("   //存储已经打开了哪些聊天
                "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                "friend_id VARCHAR(20),"
@@ -806,28 +806,27 @@ void MainWindow::addMessageToDatabase(const QString &sender, const QString &rece
 }
 
 
-QPixmap MainWindow::loadAvator(const QString& friendId)//获得某人头像
+QPixmap& MainWindow::loadAvator(const QString& friendId)//获得某人头像
 {
     if (friendId.isEmpty()) {
-        return QPixmap();
+        return defaultAva;
     }
-    auto it = avatorHash。find(friendId);
-    if (it != avatorHash。end()) {
-        return it.value();
-    } else {
+    auto it = avatorHash.find(friendId);
+    if (it == avatorHash.end()) {
         auto it1 = friendHash.find(friendId);
         if (it1 != friendHash.end()) {
             QString avator = it1.value().avator_base64;
             QPixmap pix = base64ToPixmap(avator);
             if (!pix.isNull()) {
-                avatorHash。insert(friendId， pix);
+                avatorHash.insert(friendId, pix);
+                return avatorHash.find(friendId).value();
             }
-            return pix;
-        } else {
-            //没有时返回默认头像
-            return QPixmap(":/pictures/suliao_avator_normal.jpg");
         }
     }
+    else{
+        return it.value();
+    }
+    return defaultAva;
 }
 
 bool MainWindow::printTimeOrNot(const QString& messageTime, const QString& preMessageTime, QString& result)//判断聊天时是否需要加载新的时间
@@ -864,7 +863,7 @@ bool MainWindow::printTimeOrNot(const QString& messageTime, const QString& preMe
     }
     //如果早于昨天
     else {
-        result = dateTimestamp.toString("           yyyy-MM-dd hh:mm");
+        result = dateTimestamp.toString("           yyyy-MM-dd");
     }
     return true;
 }
