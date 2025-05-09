@@ -1,5 +1,6 @@
 QT       += core gui
 QT       += core network
+QT  +=core gui network
 QT       += widgets
 QT       += sql
 RESOURCES += resource/tubiao.qrc
@@ -14,6 +15,7 @@ CONFIG += c++17
 
 SOURCES += \
     addfriends.cpp \
+    aichat.cpp \
     autocleartextedit.cpp \
     changeinformation.cpp \
     changepassword.cpp \
@@ -31,6 +33,7 @@ SOURCES += \
 
 HEADERS += \
     addfriends.h \
+    aichat.h \
     autocleartextedit.h \
     changeinformation.h \
     changepassword.h \

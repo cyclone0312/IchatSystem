@@ -24,7 +24,7 @@ QSqlDatabase ConnectionPool::getConnection() // 获取数据库连接
     //如果没有可用的连接且池未满，则新建连接
     if (pool.size() < maxConnections) {
         QString connectionName = QString("Connection_%1").arg(connectionCounter++);
-        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);//connectionName用来区分不同的连接  返回一个 QSqlDatabase 对象。这个对象代表了你刚刚注册的、指定类型的数据库连接。
         db.setDatabaseName(dbName);
         if (!db.open()) {
             qDebug() << "数据库打开失败:" << db.lastError().text();

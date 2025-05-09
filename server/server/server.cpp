@@ -4,7 +4,7 @@
 
 Server::Server(QWidget *parent)
     : QMainWindow(parent)
-    ， ui(new Ui::Server)
+    , ui(new Ui::Server)
 {
     ui->setupUi(this);
     //连接数据库
@@ -102,7 +102,7 @@ void Server::onNewConnection()//有新连接到来新建clienthandler
     qDebug()<<"主线程是"<<QThread::currentThread()->currentThreadId();
     QTcpSocket *socket = TCP->nextPendingConnection();
     ConnectionPool& pool = ConnectionPool::getInstance();//获取连接池实例
-    ClientHandler* handler = new ClientHandler(socket, pool, this);
+    ClientHandler* handler = new ClientHandler(socket, pool, this);//为新的连接建立一个Client线程包含连接对应的socket pool 和当前 Server 对象的指针，让 ClientHandler 能访问服务器的资源和方法
     handler->start();
 }
 

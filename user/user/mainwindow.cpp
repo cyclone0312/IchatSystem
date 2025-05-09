@@ -5,12 +5,15 @@
 #include "autocleartextedit.h"
 #include "dialog.h"
 
+
 MainWindow::MainWindow(const QString accountNumber0, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::MainWindow),
     accountNumber(accountNumber0),
     socket(new QTcpSocket(this)),
-    friendModel(new QStandardItemModel(this))
+    friendModel(new QStandardItemModel(this)),
+    aiChat(new AIChat(this)),
+    isAIChatActive(false)
 {
     ui->setupUi(this);
     //初始化窗口
@@ -66,8 +69,159 @@ MainWindow::MainWindow(const QString accountNumber0, QWidget *parent)
         raise();
         activateWindow();
     });
+
+    setupAIChat();
 }
 
+void MainWindow::setupAIChat()
+{
+    // 连接AI聊天信号和槽
+    connect(aiChat, &AIChat::receivedAIResponse, this, &MainWindow::handleAIResponse);
+    connect(aiChat, &AIChat::errorOccurred, this, &MainWindow::handleAIError);
+
+    // 从配置文件读取API密钥（如果有）
+   // QSettings settings("settings.ini", QSettings::IniFormat);
+    QString apiKey = "sk-qiqmjdxitvxseptudymlvzsipmimxbufvxeixsqiwunoapbe";
+    if (!apiKey.isEmpty()) {
+        aiChat->setApiKey(apiKey);
+    }
+
+    // 设置默认模型
+    aiChat->setModel("deepseek-ai/DeepSeek-V3");
+}
+
+void MainWindow::toggleAIChat()
+{
+    isAIChatActive = true;
+
+    if (isAIChatActive) {
+        // 切换到AI聊天模式
+        currentChatTarget = "AI助手";
+
+        bool aiInList =false;
+        QAbstractItemModel *model= ui->list_talks->model();
+        if(model){
+            int rowCount = model->rowCount();
+            for(int i=0;i< rowCount;i++)
+            {
+                QModelIndex index = model->index(i,0);
+                QString itemData = model->data(index,Qt::UserRole+1).toString();
+                if (itemData == "AI助手") {
+                    aiInList = true;
+                    ui->list_talks->setCurrentIndex(index);
+                    break;
+                }
+            }
+        }
+
+        // 如果AI助手不在聊天列表中，添加它
+        if (!aiInList) {
+            // 创建AI助手的AccountInfo
+            AccountInfo aiInfo;
+            aiInfo.account = "AI助手";
+            aiInfo.name = "AI助手";
+            aiInfo.signature = "我是您的AI助手，有什么可以帮您的？";
+            aiInfo.gender = "未知";
+
+            // 使用默认头像
+            QPixmap aiAvatar(":/pictures/suliao_avator_normal.jpg");
+            aiInfo.avator_base64 = pixmapToBase64(aiAvatar);
+
+            // 添加到聊天列表  然后再次调用toggleAIChat()这样就能实现页面的切换
+            addSomeoneToTalkList(aiInfo, "点击开始与AI对话", QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"), "0");
+            toggleAIChat();
+        }
+        // 检查AI助手是否在好友列表中
+        if (!friendHash.contains("AI助手")) {
+            // 如果AI助手不在好友列表中，添加它
+            AccountInfo aiInfo;
+            aiInfo.account = "AI助手";
+            aiInfo.name = "AI助手";
+            aiInfo.signature = "我是您的AI助手，有什么可以帮您的？";
+            aiInfo.gender = "未知";
+
+            // 使用默认头像
+            QPixmap aiAvatar(":/pictures/suliao_avator_normal.jpg");
+            aiInfo.avator_base64 = pixmapToBase64(aiAvatar);
+
+            // 添加到好友列表
+            friendHash.insert("AI助手", aiInfo);
+        }
+        // 创建或切换到AI聊天页面
+        if (!switchPageTo("AI助手")) {
+            // 如果切换失败，可能是因为聊天列表为空或其他原因
+            // 可以在这里添加一些错误处理
+            qDebug() << "切换到AI聊天页面失败";
+            isAIChatActive = false;
+            return;
+        }
+
+        // 更新UI提示用户正在AI聊天模式
+        ui->but_tool4->setStyleSheet(
+            "QPushButton {"
+            "    background-color: rgba(0, 123, 255, 0.3);"
+            "    border: none;"
+            "    color: black;"
+            "}"
+            "QPushButton:hover {"
+            "    background-color: rgba(0, 123, 255, 0.5);"
+            "}"
+            "QPushButton:pressed {"
+            "    background-color: rgba(0, 123, 255, 0.7);"
+            "}"
+            );
+    } else {
+        // 切换回普通聊天模式
+        ui->but_tool4->setStyleSheet(
+            "QPushButton {"
+            "    background-color: transparent;"
+            "    border: none;"
+            "    color: black;"
+            "}"
+            "QPushButton:hover {"
+            "    background-color: rgba(0, 0, 0, 0.1);"
+            "}"
+            "QPushButton:pressed {"
+            "    background-color: rgba(0, 0, 0, 0.2);"
+            "}"
+            );
+    }
+}
+
+void MainWindow::handleAIResponse(const QString &response)
+{
+    // 确保我们在AI聊天模式
+    if (isAIChatActive && currentChatTarget == "AI助手") {
+        // 获取当前聊天页面
+        QWidget *currentPage = ui->stack_talks->currentWidget();
+        if (currentPage) {
+            // 添加AI回复到聊天界面
+            addMessageTo(currentPage,
+                         "AI助手",
+                         "text",
+                         response,
+                         QDateTime::currentDateTime().toUTC().toString("yyyy-MM-ddThh:mm:ss"));
+
+            // 更新聊天列表中的最新消息
+            updateTalkListFree("AI助手", response, QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+        }
+    }
+}
+void MainWindow::handleAIError(const QString &errorMessage)
+{
+    // 显示错误消息
+    if (isAIChatActive) {
+        Dialog* dialog = new Dialog(this);
+        dialog->transText("AI聊天出错: " + errorMessage);
+        dialog->exec();
+    }
+}
+void MainWindow::on_but_tool4_clicked()
+{
+    // 切换AI聊天模式
+    qDebug() << "AI聊天按钮被点击";
+    toggleAIChat();
+}
 
 MainWindow::~MainWindow()
 {
@@ -93,51 +247,132 @@ void MainWindow::initAvatar()//初始化头像
     ui->lab_avator->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 }
 
-
 void MainWindow::setupFriendList()//设置好友列表模型
 {
-    //设置列表
-    ui->list_friends->setViewMode(QListView::ListMode);//设置视图模式为列表模式
-    ui->list_friends->setSelectionBehavior(QAbstractItemView::SelectRows);//设置选择行为为选择整行
-    ui->list_friends->setSelectionMode(QAbstractItemView::SingleSelection);//设置选择模式为单选
-    ui->list_friends->setEditTriggers(QAbstractItemView::NoEditTriggers);//禁止编辑
-    ui->list_friends->setItemDelegate(new FriendDelegate(this));//设置自定义的委托用于绘制列表项
-    //设置项
+    // //设置列表 : 设置列表视图 (QListView) 本身的属性和行为。
+    // 设置视图模式为列表模式。
+    // QListView::ListMode 是 QListView 的一种显示模式，它将项目排列成一个简单的垂直列表。
+    ui->list_friends->setViewMode(QListView::ListMode);
+
+    // 设置用户的选择行为。
+    // QAbstractItemView::SelectRows 表示当用户点击列表中的任何位置时，选择整个行，而不是只选择单个项目或单元格。
+    ui->list_friends->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    // 设置用户的选择模式。
+    // QAbstractItemView::SingleSelection 表示用户一次只能选择一个项目。
+    ui->list_friends->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    // 设置项目的编辑触发方式。
+    // QAbstractItemView::NoEditTriggers 表示用户无法通过交互方式（如双击或按 F2 键）开始编辑列表中的项目。项目只能通过程序代码进行编辑。
+    ui->list_friends->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    // 设置自定义的委托 (Delegate) 用于绘制列表项。
+    // QAbstractItemDelegate 是负责渲染（绘制）列表中的单个项目以及管理编辑器的类。
+    // FriendDelegate 是一个自定义的委托类（继承自 QAbstractItemDelegate 或其子类）。
+    // 原理：由于好友列表的每个项目可能包含头像、昵称、签名等复杂布局，QLabel 默认的绘制方式无法满足需求，所以需要自定义一个委托来负责按照特定样式绘制每一个好友项目。
+    ui->list_friends->setItemDelegate(new FriendDelegate(this));
+
+    // //设置项 : 创建数据模型 (Model) 和模型中的项目 (Item)。
+    // 创建一个标准的项目模型 (QStandardItemModel)。
+    // QStandardItemModel 是 Qt 提供的一个简单的、基于项目的标准模型，它以树状结构存储 QStandardItem 对象。
+    // 这个模型将作为数据的来源，为 QListView 提供需要显示的数据。
+    // this (MainWindow) 被设置为模型的父对象，以便 Qt 的对象树管理内存。
     friendModel = new QStandardItemModel(this);
+
+    // 将创建的 friendModel 模型设置到列表视图中。
+    // 在设置代理模型之前先设置源模型，虽然通常会设置代理模型，但这步是先关联原始数据模型。
     ui->list_friends->setModel(friendModel);
-    QStandardItem *addFriendItem0 = new QStandardItem("新的朋友");
-    QStandardItem *addFriendItem = new QStandardItem("新的朋友");
-    QStandardItem *friendListItem = new QStandardItem("好友列表");
-    //设置不可选标志
+
+    // 创建三个 QStandardItem 对象，分别代表列表中的几个固定或特殊项目。
+    // “新的朋友”可能用于显示添加好友的入口。
+    // “好友列表”可能用于作为下方实际好友列表的分组标题。
+    QStandardItem *addFriendItem0 = new QStandardItem("新的朋友"); // 第一个“新的朋友”项
+    QStandardItem *addFriendItem = new QStandardItem("新的朋友"); // 第二个“新的朋友”项
+    QStandardItem *friendListItem = new QStandardItem("好友列表"); // “好友列表”项
+
+    // //设置不可选标志 : 设置这些特殊项目的交互标志。
+    // 设置 addFriendItem0 (第一个“新的朋友”) 的标志为 Qt::NoItemFlags (0)。
+    // 原理：Qt::NoItemFlags 表示该项目没有任何标志位被设置，特别是 Qt::ItemIsSelectable 标志被禁用。这意味着这个项目**不能**被用户选中，它可能只作为一个静态的标题或提示。
     addFriendItem0->setFlags(Qt::NoItemFlags);
+
+    // 设置 addFriendItem (第二个“新的朋友”) 的标志。
+    // Qt::ItemIsEnabled: 项目是启用的，可以交互。
+    // Qt::ItemIsSelectable: 项目可以被用户选中。
+    // 原理：这个项目是可以被用户点击选中的，用于触发“添加朋友”的操作。
     addFriendItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+
+    // 设置 friendListItem (“好友列表”) 的标志为 Qt::NoItemFlags。
+    // 原理：这个项目也不能被用户选中，只作为一个静态的分组标题。
     friendListItem->setFlags(Qt::NoItemFlags);
-    //获取代表添加好友的图标
-    //转换为 QPixmap，指定图标的大小
-    QPixmap addFriendPixmap(":/pictures/addfriends.jpg"); // 32x32 像素的图标
-    //将 QPixmap 转换为 Base64
+
+    // //获取代表添加好友的图标 : 为可选择的“新的朋友”项准备图标数据。
+    // 从 Qt 资源文件中加载一个图片作为图标。
+    // ":/pictures/addfriends.jpg" 是一个资源路径，表示图片文件被嵌入到应用程序的资源中。
+    QPixmap addFriendPixmap(":/pictures/addfriends.jpg"); // 加载图片到 QPixmap
+
+    // //转换为 QPixmap，指定图标的大小 : 这行注释是错误的，它前面已经是一个 QPixmap 了。
+    // 将 QPixmap 转换为 QImage。
+    // QImage 是 Qt 处理图片的另一个类，通常用于像素级的访问和处理，是设备无关的。
+    // 原理：某些操作（如保存到特定格式）可能需要 QImage 类型。
     QImage image = addFriendPixmap.toImage();
+
+    // 创建一个 QBuffer 对象。QBuffer 允许你在内存中的 QByteArray 上像文件一样进行读写操作。
     QBuffer buffer;
+    // 以只写模式打开缓冲区。
     buffer.open(QIODevice::WriteOnly);
+
+    // 将 QImage 的图像数据保存到缓冲区中，并指定格式为 PNG。
+    // 原理：将图片数据编码为 PNG 格式的二进制数据，存储在 QBuffer 内部关联的 QByteArray 中。
     image.save(&buffer, "PNG"); // 将图像保存为 PNG 格式
+
+    // 从缓冲区获取保存好的 PNG 格式的二进制数据。
+    // buffer.data() 返回 QBuffer 内部关联的 QByteArray 的引用。
     QByteArray byteArray = buffer.data();
+    buffer.close(); // 关闭缓冲区。
+
+    // 将 PNG 二进制数据进行 Base64 编码。
+    // Base64 编码将二进制数据转换为只包含 ASCII 可打印字符的字符串，适合嵌入到文本数据（如 JSON）或某些需要在文本环境中传输的场景。
+    // 原理：这里将图标数据编码为 Base64 字符串，以便存储到模型的项目中。
     QString base64String = byteArray.toBase64();
-    //将 Base64 字符串设置到 addFriendItem 中
+
+    // //将 Base64 字符串设置到 addFriendItem 中 : 将 Base64 编码后的图标数据存储到模型项目中。
+    // 将 Base64 字符串数据设置到 addFriendItem (可选择的“新的朋友”) 中，使用一个自定义的角色 (Role)。
+    // setData() 方法允许在 QStandardItem 中存储不同“角色”的数据。Qt 定义了标准角色（如 Qt::DisplayRole 用于文本，Qt::DecorationRole 用于图标）。
+    // Qt::UserRole 是用户自定义角色的起始值。Qt::UserRole + 4 是一个应用程序自定义的角色 ID。
+    // 原理：这里不使用标准的 Qt::DecorationRole 直接设置 QIcon，而是将 Base64 字符串存入一个自定义角色。这意味着前面设置的 FriendDelegate 必须能够识别 Qt::UserRole + 4 这个角色，从数据中取出 Base64 字符串，解码为图片，然后自己绘制图标。这是一个自定义的实现方式。
     addFriendItem->setData(base64String, Qt::UserRole + 4);
-    //将项添加到模型中
-    friendModel->appendRow(addFriendItem0);
-    friendModel->appendRow(addFriendItem);
-    friendModel->appendRow(friendListItem);
-    //初始化模型
+
+    // //将项添加到模型中 : 将创建的项目添加到 QStandardItemModel 中作为行。
+    // 按照顺序将项目添加到模型的顶部（第一行、第二行、第三行）。
+    friendModel->appendRow(addFriendItem0); // 添加第一个非可选的“新的朋友”
+    friendModel->appendRow(addFriendItem);   // 添加第二个可选的“新的朋友”
+    friendModel->appendRow(friendListItem); // 添加“好友列表”标题
+    // 实际的好友项目会在后续代码中动态添加到 friendModel 中（可能添加到 friendListItem 下方作为子项目，或者直接添加到后面，取决于实际设计）。
+
+    // //初始化模型 : 设置代理模型。
+    // 创建一个 FilterProxyModel 的实例。
+    // FilterProxyModel 看起来是继承自 QSortFilterProxyModel 的一个自定义代理模型。
+    // 原理：代理模型位于源模型 (friendModel) 和视图 (ui->list_friends) 之间。它可以对源模型中的数据进行排序、过滤或分组，并将处理后的数据呈现给视图。这使得可以在不修改原始数据模型的情况下改变视图的显示内容和顺序。
     filterProxyModel = new FilterProxyModel(this);
+
+    // 将 friendModel 设置为 filterProxyModel 的源模型。
+    // 原理：filterProxyModel 现在将从 friendModel 获取数据，并在提供给视图之前对其进行潜在的处理。
     filterProxyModel->setSourceModel(friendModel);
-    //设置模型到列表视图
+
+    // //设置模型到列表视图 : 将代理模型设置到视图。
+    // 将 filterProxyModel 设置到列表视图中。
+    // 原理：视图现在显示的是 filterProxyModel 处理后的数据，而不是直接显示 friendModel 的原始数据。
     ui->list_friends->setModel(filterProxyModel);
-    //连接信号与槽
+
+    // //连接信号与槽 : 连接视图的选择模型信号到槽函数，以响应用户选择项目。
+    // 获取列表视图关联的选择模型 (QItemSelectionModel)。这个模型管理视图中项目的选中状态和当前项目。
+    // 连接 selectionModel 的 currentChanged 信号。这个信号在视图的“当前项目”改变时发射（例如用户点击了不同的项目）。它带有新的当前项目的模型索引。
+    // 连接到 MainWindow 的 onFriendItemCurrentChanged 槽函数。
+    // 原理：当用户在好友列表中选择（点击）不同的项目时，会触发这个连接，导致 onFriendItemCurrentChanged 槽函数被调用。您可以在这个槽函数中根据用户选择的项目来执行相应的操作
+    //（例如，如果选择了可点击的“新的朋友”项，就弹出添加好友对话框；如果选择了实际的好友项，就打开聊天窗口）。
     connect(ui->list_friends->selectionModel(), &QItemSelectionModel::currentChanged,
             this, &MainWindow::onFriendItemCurrentChanged);
 }
-
 
 void MainWindow::setupTalkList()//设置聊天列表模型
 {
@@ -466,43 +701,96 @@ bool MainWindow::deleteSomeoneInFriendList(const QString &account)//清理好友
     return false;
 }
 
-
-bool MainWindow::deleteSomeoneInTalkList(const QString &account)//删除聊天列表中的某个聊天
+bool MainWindow::MainWindow::deleteSomeoneInTalkList(const QString &account)//删除聊天列表中的某个聊天
 {
-    //清理hash
+    // // 清理 hash : 删除内部缓存的数据。
+    // 假设 messageListHash 是一个 QHash 或 QMap 成员变量，用于存储与每个聊天对象关联的消息列表或其他聊天数据。
+    // 查找是否存在以要删除的账号 (account) 为键的条目。find() 返回一个迭代器，end() 返回一个无效迭代器。
     if(messageListHash.find(account) != messageListHash.end()){
+        // 如果找到了对应的条目，将其从哈希表中移除。
+        // 原理：确保内部缓存与即将删除的聊天列表项保持同步，避免内存泄漏或访问不存在的数据。
         messageListHash.remove(account);
     }
+
+    // 检查当前聊天列表中选中的项是否是即将被删除的聊天项。
+    // ui->list_talks->currentIndex() 获取 QListView 中当前选中项的模型索引 (QModelIndex)。
+    // .data(Qt::UserRole + 1) 获取该选中项在自定义角色 Qt::UserRole + 1 中存储的数据（根据之前的代码，这很可能是好友的账号）。
+    // == account 将选中项的账号与要删除的账号进行比较。
     if(ui->list_talks->currentIndex().data(Qt::UserRole + 1) == account){
+        // 如果当前正在查看或选中的聊天就是要删除的聊天，则切换到 stacked widget 的第一个页面。
+        // ui->stack_talks 假设是一个 QStackedWidget，用于在不同的聊天界面之间切换显示。
+        // setCurrentIndex(0) 将 stacked widget 的显示切换到索引为 0 的子控件，这通常是一个空白页或默认提示页。
+        // 原理：避免在删除当前正在查看的聊天后，界面显示混乱或崩溃。切换到一个默认状态。
         ui->stack_talks->setCurrentIndex(0);
     }
-    //获取源模型
+
+    // // 获取源模型 : 访问代理模型背后的原始数据模型。
+    // 从 talkFilterProxyModel 代理模型中获取其源模型 (Source Model) 的指针。
+    // talkFilterProxyModel 假设是 QSortFilterProxyModel 的子类，用于管理聊天列表 ui->list_talks 的数据。
+    // 原理：QSortFilterProxyModel 本身不存储数据，数据存储在源模型中。要直接修改数据（如删除行），需要操作源模型。
     QAbstractItemModel *sourceModel = talkFilterProxyModel->sourceModel();
+
+    // 检查获取到的源模型指针是否有效。
     if (sourceModel) {
+        // 遍历源模型中的所有行。
+        // sourceModel->rowCount() 获取源模型中的总行数。
         for (int row = 0; row < sourceModel->rowCount(); ++row) {
+            // 获取当前行 (row) 在第一列 (0) 的模型索引。
             QModelIndex index = sourceModel->index(row, 0);
+
+            // 从当前行模型索引中获取 Qt::UserRole + 1 角色的数据，并存储在 QVariant 中。
+            // 这个角色通常存储了聊天对象的账号 ID。
             QVariant data = sourceModel->data(index, Qt::UserRole + 1);
+
+            // 将获取到的数据（账号 ID）转换为 QString。
             QString string = data.toString();
-            //匹配上则删除
+
+            // // 匹配上则删除 : 检查当前行的账号是否是要删除的账号。
             if (string == account) {
+                // 如果匹配上了，说明找到了要删除的聊天项。
+
+                // 请求视图更新。这可能用于在删除前强制视图重绘一次，但通常在删除行后视图会自动更新。这里可能并非严格必要。
                 ui->list_talks->update();
+
+                // 创建一个 QSqlQuery 对象，用于执行数据库操作。
+                // db 假设是已连接的数据库连接对象（可能从连接池获取）。
                 QSqlQuery qry(db);
+                // 准备 SQL DELETE 语句：从 talks 表中删除 friend_id 匹配指定账号 (account) 的记录。
+                // 原理：删除这个好友的所有聊天记录。
                 qry.prepare("DELETE FROM talks WHERE friend_id = :friend_id");
+                // 绑定参数：将要删除的账号绑定到占位符。
                 qry.bindValue(":friend_id", account);
+                // 执行 DELETE 语句。这里的返回值未被检查，可能需要添加错误处理。
                 qry.exec();
+
+                // 再次检查当前选中的项是否是要删除的项。这段检查与函数开头的检查重复了。
+                // 如果当前选中的是这个聊天，并且前面的代码已经切换了 stacked widget，这里可能只是为了额外的确认或处理。
                 if(ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString() == account){
-                    qDebug()<<"当前聊天的人的对话框被删除";
+                    qDebug()<<"当前聊天的人的对话框被删除"; // 打印调试信息。
+                    // 清空显示当前聊天对象名称的 QLabel。
+                    // ui->lab_friendname 假设是显示当前聊天对象昵称的 QLabel。
                     ui->lab_friendname->setText("");
                 }
+
+                // 从**源模型**中移除当前行 (row)。
+                // 原理：这是从列表中删除项目的关键步骤。当源模型中的行被移除后，与其关联的代理模型 (talkFilterProxyModel) 会收到通知并更新其内部结构，进而通知视图 (ui->list_talks) 更新显示，从而移除列表项。
+                // 注意：在一个正向循环中移除列表项后，后续循环的索引会受到影响（后面的项会前移）。由于这里在删除后立即返回，所以不会导致跳过紧邻的下一个元素的问题。
                 sourceModel->removeRow(row);
+
+                // 清除视图中的所有选择。
+                // 原理：删除当前选中的项目后，清除选择状态，避免视图中仍然显示一个已删除项的“选中”状态。
                 ui->list_talks->clearSelection();
+
+                // 返回 true，表示成功找到了要删除的聊天项并已执行删除操作。
                 return true;
             }
         }
+        // 如果循环结束都没有找到匹配的账号
     }
+    // 如果 sourceModel 无效（例如 talkFilterProxyModel 没有设置源模型）或循环结束都没有找到匹配的账号。
+    // 返回 false，表示没有找到要删除的聊天项。
     return false;
 }
-
 
 bool MainWindow::ifTalkHaveOpened(const QString &account)//判断某个人的聊天是否已经在消息列表中了
 {
@@ -607,28 +895,80 @@ void MainWindow::sendMessageToFriend(const QString &account)//给某个好友发
         return;
     }
 }
-
-
-bool MainWindow::switchPageTo(const QString &friendId)//将聊天页面切换到账号为account的页面
+bool MainWindow::switchPageTo(const QString &friendId)
 {
+    // 1. 基本有效性检查
     if(friendId.isEmpty() || !ui->list_talks->currentIndex().isValid()){
         return false;
     }
+
+    // 2. 查找是否已存在该好友的聊天页面
     QWidget *targetPage = ui->stack_talks->findChild<QWidget*>(friendId);
+
+    // 3. 如果找到了已存在的聊天页面
     if (targetPage) {
         int index = ui->stack_talks->indexOf(targetPage);
         ui->stack_talks->setCurrentIndex(index);
+
         QListWidget *list = targetPage->findChild<QListWidget *>();
-        list->scrollToBottom();
+        if (list) {
+            list->scrollToBottom();
+        }
+
         qDebug()<<"已经有这个聊天窗口了";
         return true;
     }
-    if(friendHash.find((friendId)) == friendHash.end()){//没有这个好友
+
+    // 4. 特殊处理AI助手或检查是否是好友
+    if(friendId == "AI助手" || friendHash.contains(friendId)){
+        // 创建一个新的聊天页面
+        QWidget *newPage = new QWidget();
+        newPage->setObjectName(friendId);
+
+        // 创建聊天消息列表
+        QListWidget *messageList = new QListWidget(newPage);
+        messageList->setFrameShape(QFrame::NoFrame);
+        messageList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        messageList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        messageList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        messageList->setSelectionMode(QAbstractItemView::NoSelection);
+
+        // 设置布局
+        QVBoxLayout *layout = new QVBoxLayout(newPage);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->addWidget(messageList);
+        newPage->setLayout(layout);
+
+        // 将新页面添加到stack_talks
+        int newIndex = ui->stack_talks->addWidget(newPage);
+        ui->stack_talks->setCurrentIndex(newIndex);
+
+        // 设置当前聊天对象
+        currentChatTarget = friendId;
+
+        // 设置好友名称
+        if (friendId == "AI助手") {
+            ui->lab_friendname->setText("AI助手");
+
+            // 添加欢迎消息
+            addMessageTo(newPage,
+                         "AI助手",
+                         "text",
+                         "您好，我是AI助手，有什么可以帮您的？",
+                         QDateTime::currentDateTime().toUTC().toString("yyyy-MM-ddThh:mm:ss"));
+        } else {
+            ui->lab_friendname->setText(friendHash[friendId].name);
+        }
+
+        // 启用输入框
+        ui->edit_input->setEnabled(true);
+
+        return true;
+    } else {
         qDebug()<<"没有这个好友";
         return false;
     }
 }
-
 
 void MainWindow::addMessageTo(const QWidget *page, const QString &sender, const QString &messageType,
                               const QString &message, const QString &timestamp)
@@ -1675,109 +2015,259 @@ void MainWindow::goAddFriends(const QString &friendAccount)//添加好友
     dialog->exec();
 }
 
-
 void MainWindow::changeInfo()//弹出修改个人资料窗口
 {
-    if (changeInfoFlag == 0) {
+    // // 弹出修改个人资料窗口 : 函数签名。这是一个槽函数，通常连接到菜单项或按钮的点击信号。
+
+    // 检查自定义标志 changeInfoFlag 的值。
+    // changeInfoFlag 假设是 MainWindow 的一个成员变量，用于记录修改资料窗口的状态，例如 0 表示未打开，1 表示已打开。
+    if (changeInfoFlag == 0) { // 如果标志为 0，表示修改资料窗口当前未打开
+        // // 未打开时：创建新的窗口并初始化
+
+        // 声明一个 MyAccountInfo 结构体变量。
+        // MyAccountInfo 假设是用于存储用户账号信息的结构体，myInfo 是存储当前用户信息的成员变量。
         MyAccountInfo tmpInfo;
+        // 将当前用户的信息从 myInfo 复制到临时结构体 tmpInfo 中。
+        // 原理：创建一个用户信息的副本，用于传递给修改资料对话框进行显示和编辑。这样做避免了对话框直接操作 myInfo 成员变量，提高了安全性，即使对话框被取消，也不会影响 myInfo 的原始数据。
         tmpInfo.account = myInfo.account;
         tmpInfo.name = myInfo.name;
         tmpInfo.avator_base64 = myInfo.avator_base64;
         tmpInfo.gender = myInfo.gender;
         tmpInfo.signature = myInfo.signature;
+
+        // 创建一个新的 ChangeInformation 对话框实例。
+        // ChangeInformation 假设是用于修改个人资料的自定义对话框类。
+        // new ChangeInformation(tmpInfo, this) 在堆上分配内存创建一个 ChangeInformation 对象。
+        // 传入参数：tmpInfo 结构体（初始化对话框显示内容），this（将 MainWindow 设置为对话框的父窗口）。
+        // 原理：创建一个具体的修改资料窗口。设置父窗口有助于 Qt 的对象树管理内存（父窗口销毁时子窗口也会被删除）以及影响窗口的层叠关系。dialogChangeInfo 假设是 MainWindow 的一个成员变量，用于存储这个对话框的指针。
         dialogChangeInfo = new ChangeInformation(tmpInfo, this);
+
+        // // 建立信号与槽连接：在窗口关闭时重置标志
+        // 连接 dialogChangeInfo 发出的 customClose 信号到 MainWindow 的一个 Lambda 槽函数。
+        // customClose 假设是 ChangeInformation 对话框中自定义的一个信号，在对话框关闭时发射。
+        // [this]() { ... } 是一个 Lambda 表达式，作为槽函数。它捕获 this 指针，可以在 Lambda 内部访问 MainWindow 的成员。
+        // Lambda 函数体：打印调试信息，并将 changeInfoFlag 重置为 0。
+        // 原理：当修改资料对话框关闭时，通过这个连接将 MainWindow 中的 changeInfoFlag 标志改回 0，表示窗口已关闭，下次再点击时可以重新创建。Lambda 函数适合用于简短、局部性的槽逻辑。
         connect(dialogChangeInfo, &ChangeInformation::customClose, this, [this]() {
-            qDebug() << "修改信息窗口重置了";
-            changeInfoFlag = 0;
+            qDebug() << "修改信息窗口重置了"; // 打印调试信息。
+            changeInfoFlag = 0; // 重置标志为 0。
         });
+
+        // // 建立信号与槽连接：对话框需要发送网络请求时通知 MainWindow
+        // 连接 dialogChangeInfo 发出的 sendMessage 信号到 MainWindow 的 sendMessage 槽。
+        // sendMessage 假设是 ChangeInformation 对话框中的一个信号，在用户确认修改并需要将新资料发送给服务器时发射。
+        // MainWindow::sendMessage 假设是 MainWindow 中负责实际处理网络发送（使用 socket）的槽函数。
+        // 原理：将修改资料对话框发送网络请求的任务“委托”给 MainWindow 来完成。对话框只负责收集用户输入并发出“请发送这个数据”的信号，MainWindow 负责处理网络通信细节，实现了职责分离。
         connect(dialogChangeInfo, &ChangeInformation::sendMessage, this, &MainWindow::sendMessage);
+
+        // // 建立信号与槽连接：MainWindow 接收服务器响应后通知对话框结果
+        // 连接 MainWindow 发出的 changeResult 信号到 dialogChangeInfo 的 dealResult 槽。
+        // changeResult 假设是 MainWindow 中的一个信号，在 MainWindow 接收并处理了服务器关于修改资料请求的响应（成功或失败）后发射。
+        // dealResult 假设是 ChangeInformation 对话框中的一个槽函数，用于接收服务器响应结果并更新对话框界面（如显示“修改成功”或“修改失败”提示）。
+        // 原理：将服务器响应结果从处理网络通信的 MainWindow 传递回需要显示结果的修改资料对话框。实现了结果的传递和界面的更新。
         connect(this, &MainWindow::changeResult, dialogChangeInfo, &ChangeInformation::dealResult);
+
+        // 显示修改资料对话框。
+        // show() 方法使窗口可见。对于 QDialog，通常使用 exec() 方法以模态方式显示（阻塞其他窗口），但这里使用 show() 可能表示它被设计为非模态对话框，允许在修改资料时同时操作主窗口。
         dialogChangeInfo->show();
+
+        // 将标志设置为 1，表示修改资料窗口已打开。
         changeInfoFlag = 1;
-    } else if (changeInfoFlag == 1) {
+    }
+    // 否则，如果标志不是 0（即 changeInfoFlag == 1），表示修改资料窗口已经打开
+    else if (changeInfoFlag == 1) {
+        // // 已打开时：将现有窗口带到前面并居中
+
+        // 将已存在的对话框窗口带到其父窗口（或桌面，如果是顶级窗口）的堆叠顺序的最前面。
+        // 原理：确保窗口即使被其他窗口遮挡，也能被用户看到。
         dialogChangeInfo->raise();
+
+        // 检查 dialogChangeInfo 指针是否有效。
+        // 原理：这行检查在这里是多余的，因为 if (changeInfoFlag == 1) 的前提就是 dialogChangeInfo 已经被创建且标志被设置为 1。如果程序其他地方错误地将 changeInfoFlag 设置为 1 但没有创建对话框，这个检查可以避免崩溃，但更应检查 changeInfoFlag 的设置逻辑。
         if (dialogChangeInfo) {
+            // 计算将对话框窗口在其父窗口 (MainWindow) 中居中的位置。
+            // this->x(), this->y(): 获取 MainWindow 左上角的屏幕全局坐标。
+            // this->width(), this->height(): 获取 MainWindow 的尺寸。
+            // dialogChangeInfo->width(), dialogChangeInfo->height(): 获取对话框的尺寸。
+            // 原理：计算公式 (父窗口位置 + (父窗口尺寸 - 子窗口尺寸) / 2) 可以得出子窗口左上角应放置的位置，使其相对于父窗口居中。
             int x = this->x() + (this->width() - dialogChangeInfo->width()) / 2;
             int y = this->y() + (this->height() - dialogChangeInfo->height()) / 2;
+
+            // 将已存在的对话框窗口移动到计算出的居中位置。
+            // move(x, y) 将窗口的左上角移动到指定的屏幕全局坐标 (x, y)。
             dialogChangeInfo->move(x, y);
+            // 原理：将对话框移动到主窗口中央，提升用户体验。
         }
     }
+    // 函数在此结束。
 }
-
 
 void MainWindow::listtalkChoice(const QJsonObject& json)//聊天列表的菜单选择完毕
 {
+    // // 聊天列表的菜单选择完毕 : 函数签名，接收一个 QJsonObject。
+
+    // 检查接收到的 JSON 对象是否为空。
+    // 如果菜单系统在用户关闭菜单但未选择任何特定项时发送一个空 JSON，可能会进入此分支。
     if(json.empty()){//如果是空 触发点击事件
+        // 以编程方式发射 ui->list_talks 控件的 clicked() 信号，并传入当前选中项的模型索引。
+        // ui->list_talks->clicked() 是 QListView 的一个信号，通常在用户点击列表项时由 Qt 自动发射。
+        // ui->list_talks->currentIndex() 获取当前选中项的模型索引。
+        // 原理：这部分逻辑可能旨在模拟用户对当前选中项进行了一次常规点击。这可能会触发连接到 ui->list_talks 的 clicked() 信号的其他槽函数，例如打开与该好友的聊天窗口。这是一种将菜单默认行为映射到常规点击行为的方式。
         ui->list_talks->clicked(ui->list_talks->currentIndex());
     }
-    else if(json["tag"] == "sendmessage"){//发送消息
+    // 如果 JSON 不为空，则根据 JSON 中的 "tag" 字段来判断用户选择了哪个菜单项。
+    else if(json["tag"] == "sendmessage"){//发送消息 (通常是右键菜单项“发送消息”)
+        // 设置输入文本框 (ui->edit_input) 获得键盘输入焦点。
+        // 原理：让用户可以直接开始输入消息，提高用户体验。
         ui->edit_input->setFocus();
+        // 将鼠标光标移动到输入框内的一个固定位置 (左上角偏移 30, 30)。
+        // QPoint(30, 30) 定义相对于 ui->edit_input 左上角的局部坐标点。
+        // ui->edit_input->mapToGlobal(...) 将局部坐标点转换为屏幕全局坐标。
+        // QCursor::setPos(...) 设置鼠标光标的全局位置。
+        // 原理：进一步引导用户输入，让鼠标光标直接位于输入区域内，方便点击或开始输入。
         QCursor::setPos(ui->edit_input->mapToGlobal(QPoint(30, 30)));//移动鼠标到edit_input内
     }
-    else if(json["tag"] == "message"){//好友信息
+    else if(json["tag"] == "message"){//好友信息 (通常是右键菜单项“查看资料/好友信息”)
+        // 声明一个 FriendMessage::FriendInfo 结构体变量，用于存储好友详细信息。
+        // FriendMessage 假设是一个自定义的显示好友资料的对话框类，FriendInfo 是其内部定义的结构体。
         FriendMessage::FriendInfo info;
+        // 从聊天列表当前选中项的模型数据中获取好友的各项信息，填充到 info 结构体中。
+        // ui->list_talks->currentIndex() 获取选中项索引。
+        // .data(Role) 从模型中获取指定角色的数据。
+        // Qt::UserRole + 4: 获取 Base64 编码的头像字符串。
+        // Qt::UserRole + 1: 获取账号。
+        // Qt::DisplayRole: 获取昵称。
+        // Qt::UserRole + 3: 获取签名。
+        // Qt::UserRole + 2: 获取性别。
         info.avator_base64 = ui->list_talks->currentIndex().data(Qt::UserRole + 4).toString();
         info.account = ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString();
         info.name = ui->list_talks->currentIndex().data(Qt::DisplayRole).toString();
         info.signature = ui->list_talks->currentIndex().data(Qt::UserRole + 3).toString();
         info.gender = ui->list_talks->currentIndex().data(Qt::UserRole + 2).toString();
+        // 原理：从列表项关联的模型数据中提取好友的各种详细属性，因为这些数据可能已经被加载并存储在模型中了。
+
+        // 创建一个 FriendMessage 对话框实例，传入好友信息 info 和当前窗口作为父窗口。
         FriendMessage *dialog = new FriendMessage(info,this);
+        // 以模态方式显示好友信息对话框。用户必须关闭此对话框后才能操作主窗口。
         dialog->exec();
+        // 原理：显示一个独立的窗口，向用户展示选中好友的详细资料。
     }
-    else if(json["tag"] == "deletefriend"){//删除好友
+    else if(json["tag"] == "deletefriend"){//删除好友 (通常是右键菜单项“删除好友”)
+        // 在执行删除操作前，检查该账号是否存在于好友列表的 hash 缓存中。
+        // friendHash 假设是一个存储好友信息的 QHash 或 QMap。
+        // find(account).end() == end() 表示在 hash 中未找到该账号。
         if(friendHash.find(ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString()) == friendHash.end()){
-            Dialog dialog(this);
-            dialog.transText("他不在您的好友列表当中!");
-            dialog.exec();
-            return;
+            // 如果账号不在好友列表 hash 中，则显示错误提示框。
+            Dialog dialog(this); // 创建自定义消息框。
+            dialog.transText("他不在您的好友列表当中!"); // 设置文本。
+            dialog.exec(); // 模态显示。
+            // 原理：防止用户尝试删除一个实际不在好友列表中的聊天项，提供友好的错误提示。
+            return; // 函数结束。
         }
-        ChoiceDialog dialog(this);
-        dialog.transText("你确定要删除好友吗?");
-        dialog.transButText("确认","取消");
-        int result = dialog.exec();
+
+        // 如果账号在好友列表 hash 中，弹出确认对话框询问用户是否确定删除。
+        ChoiceDialog dialog(this); // 创建自定义选择对话框。
+        dialog.transText("你确定要删除好友吗?"); // 设置提示文本。
+        dialog.transButText("确认","取消"); // 设置按钮文本。
+        int result = dialog.exec(); // 模态显示并等待用户点击按钮，返回点击结果 (QDialog::Accepted 或 QDialog::Rejected)。
+        // 原理：删除好友是敏感操作，需要用户二次确认。
+
+        // 检查用户是否点击了“确认”按钮 (QDialog::Accepted)。
         if(result == QDialog::Accepted){
+            // 如果用户确认删除，则检查网络连接。
+            // checkSocket() 假设是检查 socket 连接状态的函数，如果未连接可能显示错误并返回 false。
             if(!checkSocket()){
-                return;
+                return; // 网络未连接则结束函数。
             }
+            // 原理：确保网络连接可用，才能向服务器发送删除请求。
+
+            // 构建删除好友请求的 JSON 对象。
             QJsonObject jsonObj;
-            jsonObj["tag"] = "deletefriend";
-            jsonObj["account"] = myInfo.account;
+            jsonObj["tag"] = "deletefriend"; // 请求类型标签。
+            jsonObj["account"] = myInfo.account; // 当前用户的账号 (myInfo 假设存储当前用户信息的成员变量)。
+            // 获取要删除的好友账号 (从选中项模型数据中获取 Qt::UserRole + 1 的值)。
             jsonObj["friend"] = ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString();;
+            // 原理：准备包含删除请求类型、操作者账号、被操作对象账号信息的 JSON 数据，用于发送给服务器。
+
+            // 将 JSON 对象转换为 QJsonDocument 并序列化为 QByteArray，添加结束标识符 "END"。
             QJsonDocument jsonDoc(jsonObj);
             QByteArray jsonData = jsonDoc.toJson() + "END";
-            socket->write(jsonData);
-            socket->flush();
-            qDebug()<<"发送了删除好友请求"<<jsonObj["friend"];
+
+            // 通过 socket 将删除好友请求发送给服务器。
+            // socket 假设是连接服务器的 QTcpSocket 成员变量。
+            socket->write(jsonData); // 写入数据到缓冲区。
+            socket->flush(); // 强制发送缓冲区数据。
+            // 原理：向服务器发起删除好友的网络请求。服务器接收到此请求后会处理数据库中的好友关系。
+
+            qDebug()<<"发送了删除好友请求"<<jsonObj["friend"]; // 打印调试信息。
         }
+        // 注意：这里的代码只负责发送删除请求。实际的界面更新（从列表移除项）和本地数据库清理通常在收到服务器返回的“删除成功”响应后由另一个槽函数处理。
     }
-    else if(json["tag"] == "deletetalk"){//从消息列表移除
+    else if(json["tag"] == "deletetalk"){//从消息列表移除 (通常是右键菜单项“移除该聊天”)
+        // 调用 deleteSomeoneInTalkList() 函数，传入当前选中项的账号。
+        // deleteSomeoneInTalkList() 函数（前面已经讲解过）负责从聊天列表中删除该项，并清理相关缓存和本地数据库中的聊天记录。
         deleteSomeoneInTalkList(ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString());
+        // 原理：执行本地的“移除聊天”操作，只影响当前用户的聊天列表和本地记录，不影响好友关系或对方的聊天列表。
     }
-    else if(json["tag"] == "clearmessage"){//清空聊天记录
-        ChoiceDialog dialog(this);
-        dialog.transText("你确定要清空聊天记录吗？");
-        dialog.transButText("确定", "取消");
-        int result = dialog.exec();
+    else if(json["tag"] == "clearmessage"){//清空聊天记录 (通常是右键菜单项“清空聊天记录”)
+        // 弹出确认对话框询问用户是否确定清空聊天记录。
+        ChoiceDialog dialog(this); // 创建自定义选择对话框。
+        dialog.transText("你确定要清空聊天记录吗？"); // 设置提示文本。
+        dialog.transButText("确定", "取消"); // 设置按钮文本。
+        int result = dialog.exec(); // 模态显示并等待用户点击按钮。
+        // 原理：清空记录是不可恢复操作，需要用户二次确认。
+
+        // 检查用户是否点击了“确定”按钮 (QDialog::Accepted)。
         if(result == QDialog::Accepted){
-            QSqlQuery qry(db);
+            // 如果用户确认清空。
+
+            // 清空本地数据库中与该好友的聊天记录。
+            QSqlQuery qry(db); // 创建数据库查询对象。db 假设是数据库连接。
+            // 准备 SQL DELETE 语句：删除 messages 表中 sender 是该好友 或 receiver 是该好友 的所有记录。
             qry.prepare("DELETE FROM messages WHERE sender = :friend OR receiver = :friend");
+            // 绑定参数：将要清空记录的好友账号绑定到占位符。
             qry.bindValue(":friend", ui->list_talks->currentIndex().data(Qt::UserRole + 1));
+            // 执行 DELETE 语句。这里的返回值未被检查，可能需要添加错误处理。
             qry.exec();
+            // 原理：从本地数据库中物理删除所有与该好友相关的聊天消息。
+
+            // 获取当前选中项的模型索引。
             auto currentIndex = ui->list_talks->currentIndex();
-            talkFilterProxyModel->setData(currentIndex, "", Qt::UserRole + 5);
-            talkFilterProxyModel->setData(currentIndex, "", Qt::UserRole + 6);
-            talkFilterProxyModel->setData(currentIndex, "", Qt::UserRole + 10);
-            talkFilterProxyModel->dataChanged(currentIndex, currentIndex, {Qt::UserRole + 10});
-            qDebug()<<ui->list_talks->currentIndex().data(Qt::UserRole + 10);
+
+            // 更新聊天列表项模型中的数据，清除与最后一条消息预览、时间戳等相关的信息。
+            // talkFilterProxyModel->setData(index, value, role) 在代理模型上设置数据，代理模型会转发到源模型。
+            // 设置 Qt::UserRole + 5, Qt::UserRole + 6, Qt::UserRole + 10 等角色的数据为空字符串。
+            // 原理：这些自定义角色可能存储了最近一条消息的预览文本、时间戳、未读计数等信息。清空聊天记录后，这些信息也应被清除，列表项不再显示最后一条消息的预览。
+            talkFilterProxyModel->setData(currentIndex, "", Qt::UserRole + 5); // 假设是最后一条消息预览
+            talkFilterProxyModel->setData(currentIndex, "", Qt::UserRole + 6); // 假设是最后一条消息时间戳
+            talkFilterProxyModel->setData(currentIndex, "", Qt::UserRole + 10); // 假设是未读计数或草稿
+
+            // 手动发射 dataChanged 信号，通知视图模型中指定范围和角色的数据已改变。
+            // talkFilterProxyModel->dataChanged(topLeft, bottomRight, roles)
+            // 原理：虽然 setData 通常会自动触发 dataChanged，但显式发射可以确保视图（特别是委托）知道这些特定角色的数据发生了变化，从而重新绘制列表项，更新显示（例如清除未读红点和最后一条消息预览）。
+            talkFilterProxyModel->dataChanged(currentIndex, currentIndex, {Qt::UserRole + 10}); // 通知未读计数/草稿变化
+
+            qDebug()<<ui->list_talks->currentIndex().data(Qt::UserRole + 10); // 打印更新后的 UserRole + 10 数据（应该为空）。
+
+            // 清空**当前显示的**聊天界面中的消息显示区域。
+            // 查找与当前选中聊天项对应的聊天界面 QWidget (使用账号作为 objectName)。
             QWidget* page = ui->stack_talks->findChild<QWidget *>(ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString());
+            // 在找到的聊天界面 QWidget 中查找用于显示消息的 QListWidget 控件。
             QListWidget *list = page->findChild<QListWidget *>();
+            // 清空 QListWidget 中的所有项目。
             list->clear();
+            // 设置 QListWidget 的 objectName 为 "notime"。注释 "10.18修改" 可能表示这与时间显示逻辑相关。
             list->setObjectName("notime");//10.18修改
+            // 原理：从聊天界面中移除所有已显示的消息泡泡或文本。
+
+            // 显示清空成功的提示框。
             Dialog dialog(this);
             dialog.transText("清空聊天记录成功!");
             dialog.exec();
+            // 原理：告知用户操作已完成。
         }
     }
+    // 如果 json 的 tag 不属于以上任何一种情况，函数执行到这里结束。
 }
 
 
@@ -1889,6 +2379,32 @@ void MainWindow::on_but_send_clicked()//发送信息
 {
     if(!checkSocket()){
         return;
+    }
+    // 检查是否在AI聊天模式
+    if (isAIChatActive && currentChatTarget == "AI助手") {
+        qDebug()<<"AI聊天模式发送消息";
+        QString message = ui->edit_input->toPlainText();
+        if (!message.isEmpty()) {
+            // 清空输入框
+            ui->edit_input->clear();
+
+            // 添加用户消息到聊天界面
+            addMessageTo(ui->stack_talks->currentWidget(),
+                         accountNumber,
+                         "text",
+                         message,
+                         QDateTime::currentDateTime().toUTC().toString("yyyy-MM-ddThh:mm:ss"));
+
+            // 更新聊天列表中的最新消息
+            updateTalkListFree("AI助手", "正在等待AI回复...", QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+
+            // 发送消息到AI
+            aiChat->sendMessageToAI(message);
+        }
+        return; // 不执行后续的普通聊天发送逻辑
+    }
+    else
+    {qDebug()<<"不在AI聊天模式";
     }
     if(friendHash.find(ui->list_talks->currentIndex().data(Qt::UserRole + 1).toString()) == friendHash.end()){
         Dialog dialog(this);
@@ -2057,6 +2573,50 @@ void MainWindow::sendDoc(const QByteArray &jsonData, const QString &filename,
 void MainWindow::onTalkItemCurrentChanged()//聊天页面项切换项更新消息框视图
 {
     qDebug()<<"聊天窗口切换了";
+    // 获取当前选中的聊天项
+    QModelIndex currentIndex = ui->list_talks->currentIndex();
+    if (currentIndex.isValid()) {
+        QString itemData = currentIndex.data(Qt::UserRole+1).toString();
+
+        // 检查是否是AI助手
+        if (itemData == "AI助手") {
+            isAIChatActive = true;
+            currentChatTarget = "AI助手";
+
+            // 更新UI提示用户正在AI聊天模式
+            ui->but_tool4->setStyleSheet(
+                "QPushButton {"
+                "    background-color: rgba(0, 123, 255, 0.3);"
+                "    border: none;"
+                "    color: black;"
+                "}"
+                "QPushButton:hover {"
+                "    background-color: rgba(0, 123, 255, 0.5);"
+                "}"
+                "QPushButton:pressed {"
+                "    background-color: rgba(0, 123, 255, 0.7);"
+                "}"
+                );
+        } else {
+            isAIChatActive = false;
+            currentChatTarget = itemData;
+
+            // 切换回普通聊天模式
+            ui->but_tool4->setStyleSheet(
+                "QPushButton {"
+                "    background-color: transparent;"
+                "    border: none;"
+                "    color: black;"
+                "}"
+                "QPushButton:hover {"
+                "    background-color: rgba(0, 0, 0, 0.1);"
+                "}"
+                "QPushButton:pressed {"
+                "    background-color: rgba(0, 0, 0, 0.2);"
+                "}"
+                );
+        }
+    }
     ui->lab_friendname->setText(ui->list_talks->currentIndex().data(Qt::DisplayRole).toString());
     ui->edit_input->setEnabled(true);
     ui->but_tool1->setEnabled(true);
@@ -2678,20 +3238,56 @@ void MainWindow::dealYouAreKickedOffline(const QJsonObject& json)//处理被挤�
     this->close();
 }
 
-
 void MainWindow::dealMessages(const QJsonObject& json)//处理接收到的聊天消息
 {
+    // // 处理接收到的聊天消息 : 函数签名。接收一个 const 引用类型的 QJsonObject。
+    // QJsonObject 是 Qt 处理 JSON 数据结构的核心类，代表一个 JSON 对象（键值对集合）。
+
+    // // 确保发送者在聊天列表中显示或更新其信息
+    // json["sender"].toString() 从接收到的 JSON 中获取消息发送者的账号，并转换为 QString。
+    // friendHash[账号] 假设 friendHash 是一个 QHash 或 QMap 成员变量，存储了好友账号到好友信息的映射（如昵称、头像等）。这里根据发送者账号查找到其好友信息。
+    // addSomeoneToTalkList() 假设是 MainWindow 的一个成员函数，用于将某个对象添加到聊天列表 (ui->list_talks) 中。
+    // 原理：调用这个函数是为了确保发送消息的人在“最近聊天”列表 ui->list_talks 中有对应的条目。如果他是第一次给你发消息且不在列表里，这个函数会创建并添加到列表；如果已经在列表里，可能只是更新一下信息（例如将他对应的列表项移到顶部表示最近联系）。
+    // 后续的 "", "", "" 参数，根据函数名猜测，可能是用于设置列表项的最后一条消息预览、时间戳、或草稿等，这里传入空字符串表示默认处理。
     addSomeoneToTalkList(friendHash[json["sender"].toString()], "", "", "");
+
+    // // 查找对应聊天对象的聊天界面
+    // ui->stack_talks 假设是一个 QStackedWidget，用于在不同好友的聊天窗口之间切换显示。每个好友的聊天界面可能是一个独立的 QWidget，被添加到了这个 QStackedWidget 中，并以好友账号作为 objectName。
+    // findChild<QWidget*>() 是 QObject 的一个方法，用于在其子对象树中查找指定类型和名称的子对象。
+    // <QWidget*> 指定查找类型为 QWidget 指针。
+    // json["sender"].toString() 提供要查找的子控件的 objectName，这里是发送者的账号。
+    // 原理：尝试在 stacked widget 中找到与消息发送者对应的那个聊天界面（假设每个聊天界面控件都将其 objectName 设置为了对方的账号）。如果找到，page 指针将指向该控件，否则为 nullptr。
     QWidget *page = ui->stack_talks->findChild<QWidget*>(json["sender"].toString());
+
+    // // 更新未读消息状态
+    // updateUnread() 假设是 MainWindow 的一个成员函数，用于更新某个对象的未读消息计数或视觉标记。
+    // json["sender"].toString() 传入发送者的账号。
+    // 原理：调用这个函数是为了在 ui->list_talks 中更新发送者对应的列表项的未读状态，例如增加未读消息数量显示，或者显示一个红点。
     updateUnread(json["sender"].toString());
+
+    // // 将消息存储到数据库
+    // addMessageToDatabase() 假设是 MainWindow 的一个成员函数，用于将消息记录保存到数据库。
+    // 传入消息的详细信息：发送者账号、接收者账号、消息类型、消息内容、时间戳。
+    // 原理：确保消息的持久化存储，以便下次用户登录或查看历史记录时能够加载。
     addMessageToDatabase(json["sender"].toString(), json["receiver"].toString(), json["messagetype"].toString(),
-                         json["messages"].toString(),
-                         json["timestamp"].toString());
+                         json["messages"].toString(), // json["messages"] 是消息内容的字段
+                         json["timestamp"].toString()); // json["timestamp"] 是消息时间戳的字段
+
+    // // 将消息添加到对应的聊天界面显示
+    // addMessageTo() 假设是 MainWindow 的一个成员函数，用于将接收到的消息添加到指定的聊天界面控件中显示出来。
+    // 传入参数：聊天界面控件指针 (page)、发送者账号、消息类型、消息内容、时间戳。
+    // 原理：如果 page 有效（即找到了对应的聊天界面），这个函数会将消息内容格式化后添加到该界面（例如添加到文本框或聊天记录视图中），让用户在当前打开这个聊天时能看到新消息。如果 page 是 nullptr，这个函数应该能处理这种情况（比如不做任何界面更新）。
     addMessageTo(page, json["sender"].toString(), json["messagetype"].toString(),
                  json["messages"].toString(), json["timestamp"].toString());
-    liftSomebody(json["sender"].toString());
-}
 
+    // // 提升聊天界面到最前
+    // liftSomebody() 假设是 MainWindow 的一个成员函数，用于将某个对象的聊天界面提升到最前面显示。
+    // 传入发送者的账号。
+    // 原理：调用这个函数是为了在接收到新消息时，自动将发送者对应的聊天界面在 ui->stack_talks 中显示出来，让用户可以直接看到新消息的对话窗口。
+    liftSomebody(json["sender"].toString());
+
+    // 函数在此结束。
+}
 
 void MainWindow::dealDocument(const QJsonObject& json)//处理接收到的文件
 {
@@ -2710,8 +3306,8 @@ void MainWindow::dealDocument(const QJsonObject& json)//处理接收到的文件
         QByteArray fileData = QByteArray::fromBase64(json["data"].toString().toUtf8());
         QFile file(savePath);
         if (file.open(QIODevice::WriteOnly)) {
-            文件。write(fileData);
-            文件。close();
+            file.write(fileData);
+            file.close();
             qDebug() << "文件保存成功:" << savePath;
             //在主线程中发送信号
             QMetaObject::invokeMethod(this, "handleSaveDone", Qt::QueuedConnection, Q_ARG(QString, "保存成功"));

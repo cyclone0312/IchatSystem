@@ -58,7 +58,7 @@ public:
     void mouseMoveEvent(QMouseEvent *event);//拖拽移动窗口位置
     void mouseReleaseEvent(QMouseEvent *event);//重置移动状态
     void saveAvator(QString avator);//保存头像
-    void dengLuChengGong();//登录失败
+    void dengLuChengGong();//登录
     void dengLuShiBai();//登录失败
     QPixmap createCircularPixmap(const QString &imagePath);//设置一个调整好掩码的圆形头像
     QPixmap getRoundedPixmap(const QPixmap srcPixmap, const int radius);//获得圆角图片

@@ -44,6 +44,7 @@
 #include "changepassword.h"
 #include "logout.h"
 #include "mainwindow-else.h"
+#include "aichat.h"
 
 
 class FilterProxyModel;
@@ -147,6 +148,10 @@ private slots:
     void mouseMoveEvent(QMouseEvent *event);//实现拖拽移动效果与调整大小效果与移动到边框显示不同的图标效果
     void mouseReleaseEvent(QMouseEvent *event);//重置移动状态
     void onReadyRead();//读取服务器回复数据
+    void on_but_tool4_clicked(); // AI聊天按钮点击
+    void handleAIResponse(const QString &response); // 处理AI回复
+    void handleAIError(const QString &errorMessage); // 处理AI错误
+
 
 public://读取服务器回发数据之后执行的函数
     void uploadAll(const QJsonObject& json);//加载好友数据(包含聊天记录 好友申请等)
@@ -219,6 +224,12 @@ private:
     TalkFilterProxyModel *talkFilterProxyModel;//聊天列表筛选模型
     QStandardItemModel *messageModel;//消息页面模型
     QMenu *toolMenu;//左上角菜单栏
+
+    AIChat *aiChat; // AI聊天对象
+    QString currentChatTarget; // 当前聊天对象，用于区分普通聊天和AI聊天
+    bool isAIChatActive; // 是否处于AI聊天模式
+    void setupAIChat(); // 设置AI聊天
+    void toggleAIChat(); // 切换AI聊天模式
 };
 
 #endif // MAINWINDOW_H

@@ -253,40 +253,92 @@ void RegisterWindow:: receiveAvator(const QPixmap &pixmap)//收到用户选择�
     ui->lab_avator->setScaledContents(true);
 }
 
-
 void RegisterWindow::sendAva()//发送头像给服务器
 {
+    // 从 UI 界面上的 lab_avator 控件中获取当前显示的 QPixmap 图片。
+    // ui->lab_avator 假设是一个指向 QLabel 控件的指针，该控件用于显示头像图片。
+    // pixmap() 方法返回当前设置在 QLabel 上的 QPixmap。如果未设置图片，或者设置的是一个无效图片，则返回一个空的 QPixmap。
     QPixmap pixmap = ui->lab_avator->pixmap();
+
+    // 检查获取到的 QPixmap 是否是空的或无效的。
+    // isNull() 方法对于 QPixmap 而言，如果它不包含有效的图像数据（例如，文件加载失败或从未设置），则返回 true。
     if (pixmap.isNull()) {
-        qDebug() << "头像不存在，无法发送";
-        return;
+        qDebug() << "头像不存在，无法发送"; // 如果头像无效，打印调试信息。
+        return; // 函数结束，不发送头像。
     }
+
+    // 声明一个 QByteArray 对象。QByteArray 用于存储原始的字节数据，例如文件内容或网络数据包。
+    // 这里将用于存储将 QPixmap 编码后的二进制图像数据（例如 PNG 格式）。
     QByteArray byteArray;
+
+    // 创建一个 QBuffer 对象，并将其与上面声明的 byteArray 关联。
+    // QBuffer 是一个特殊的 QIODevice（输入输出设备），它允许你像操作文件或网络连接一样，对 QByteArray 进行读写操作。
     QBuffer buffer(&byteArray);
+
+    // 尝试以只写模式打开 QBuffer。准备向这个缓冲区写入数据。
+    // QIODevice::WriteOnly 是打开模式标志，表示只允许向设备写入数据。
     if (!buffer.open(QIODevice::WriteOnly)) {
-        qDebug() << "无法打开缓冲区，用于保存pixmap";
-        return;
+        qDebug() << "无法打开缓冲区，用于保存pixmap"; // 如果打开失败，打印错误信息。
+        return; // 函数结束。
     }
-    if (!pixmap.save(&buffer, "PNG")) {
-        qDebug() << "保存pixmap到缓冲区失败";
-        return;
+
+    // 将 QPixmap 的图像数据保存到 QBuffer 中，并指定保存格式为 PNG。
+    // save() 方法是 QPixmap 的方法，它将图片数据按照指定格式写入到一个 QIODevice 设备。
+    // PNG 是一个无损的图像格式，适合传输图片数据。
+    if (!pixmap.save(&buffer, "PNG")) { // 如果保存失败
+        qDebug() << "保存pixmap到缓冲区失败"; // 打印错误信息。
+        buffer.close(); // 关闭缓冲区。
+        return; // 函数结束。
     }
+    buffer.close(); // 保存成功后，关闭缓冲区。
+
+    // 将存储在 byteArray 中的原始二进制图像数据（PNG格式）进行 Base64 编码。
+    // Base64 编码是一种将任意二进制数据转换为只包含 ASCII 可打印字符的字符串的编码方式。
+    // 这是因为 JSON 等数据格式通常只处理文本，直接传输二进制数据可能会有问题。Base64 编码后的字符串可以安全地嵌入到 JSON 中。
+    // toBase64() 是 QByteArray 的方法，返回一个 Base64 编码后的 QByteArray。
+    // 这里的代码紧接着将其转换为 QString，方便放入 QJsonObject。
     QString avator = byteArray.toBase64();
+
+    // 创建或清空一个 QJsonObject 对象。QJsonObject 表示 JSON 数据结构中的一个对象（键值对的集合）。
+    // jsonObj 假设是一个成员变量。
     jsonObj = QJsonObject();
+
+    // 向 JSON 对象中添加一个键值对："tag" 为键，"myavator" 为值。这通常用于告诉服务器消息的类型。
     jsonObj["tag"] = "myavator";
+
+    // 向 JSON 对象中添加另一个键值对："avator" 为键，将 Base64 编码后的头像字符串作为值。
     jsonObj["avator"] = avator;
-    //发送消息
+
+    // ...接下来的代码是发送 JSON 数据，这部分在之前的讲解中多次出现。
+
+    // 将 QJsonObject 封装到 QJsonDocument 中。QJsonDocument 代表一个完整的 JSON 文档。
+    // jsonObj 是一个 JSON 对象，所以用 QJsonDocument(jsonObj) 构建文档。jsonDoc 假设是一个成员变量。
     jsonDoc = QJsonDocument(jsonObj);
+
+    // 将 QJsonDocument 序列化为 JSON 格式的 QByteArray。这是实际要发送的网络数据。jsonData 假设是一个成员变量。
     jsonData = jsonDoc.toJson();
-    //添加标识符
+
+    // 添加自定义的消息结束标识符 "END"。在基于流的协议（如 TCP）中，使用特定的标识符来划分不同的消息包是一种常见的做法。
     QByteArray messageWithSeparator = jsonData + "END";
+
+    // 检查 socket 对象是否有效且处于连接状态。
+    // socket 假设是一个指向 QTcpSocket 或 QAbstractSocket 子类的成员变量。
+    // socket && socket->state() == QAbstractSocket::ConnectedState 确保 socket 已被创建且已经成功连接到服务器。
+    // QAbstractSocket::ConnectedState 是 QAbstractSocket 的枚举值之一，表示套接字已连接。
     if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+        // 如果 socket 有效且已连接，则将带有标识符的 JSON 数据写入 socket 的发送缓冲区。
+        // write() 方法将数据放入缓冲区，但不保证立即发送。
         socket->write(messageWithSeparator);
+        // 强制将发送缓冲区中的数据立即发送出去。
         socket->flush();
     } else {
+        // 如果 socket 无效或未连接，打印警告信息。
         qDebug() << "Socket未连接，无法发送头像信息";
     }
-    qDebug() << "发送头像信息了";
+
+    qDebug() << "发送头像信息了"; // 打印调试信息，表明已尝试发送（不代表发送成功）。
+
+    // 清空用于存储 JSON 数据的 QByteArray。释放内存资源。
     jsonData.clear();
 }
 
